@@ -1,0 +1,234 @@
+{
+  "beans": [
+    {
+      "id": "b1111111-1111-1111-1111-111111111111",
+      "name": "Ethiopian Yirgacheffe",
+      "origin": "Ethiopia",
+      "variety": "Heirloom",
+      "process": "Washed",
+      "altitudeMeters": 2100,
+      "recommendedRoast": "light",
+      "notes": ["citrus", "floral", "berry"]
+    },
+    {
+      "id": "b2222222-2222-2222-2222-222222222222",
+      "name": "Panama Geisha",
+      "origin": "Panama",
+      "variety": "Geisha",
+      "process": "Natural",
+      "altitudeMeters": 1850,
+      "recommendedRoast": "light",
+      "notes": ["floral", "stoneFruit", "citrus"]
+    },
+    {
+      "id": "b3333333-3333-3333-3333-333333333333",
+      "name": "Colombia Huila",
+      "origin": "Colombia",
+      "variety": "Caturra",
+      "process": "Honey",
+      "altitudeMeters": 1700,
+      "recommendedRoast": "medium",
+      "notes": ["caramel", "nutty", "stoneFruit"]
+    },
+    {
+      "id": "b4444444-4444-4444-4444-444444444444",
+      "name": "Kenya AA Nyeri",
+      "origin": "Kenya",
+      "variety": "SL28",
+      "process": "Washed",
+      "altitudeMeters": 1950,
+      "recommendedRoast": "light",
+      "notes": ["berry", "citrus", "floral"]
+    },
+    {
+      "id": "b5555555-5555-5555-5555-555555555555",
+      "name": "Guatemala Antigua",
+      "origin": "Guatemala",
+      "variety": "Bourbon",
+      "process": "Washed",
+      "altitudeMeters": 1650,
+      "recommendedRoast": "mediumDark",
+      "notes": ["cocoa", "spice", "caramel"]
+    },
+    {
+      "id": "b6666666-6666-6666-6666-666666666666",
+      "name": "Sumatra Mandheling",
+      "origin": "Indonesia",
+      "variety": "Typica",
+      "process": "Wet Hulled",
+      "altitudeMeters": 1500,
+      "recommendedRoast": "dark",
+      "notes": ["spice", "cocoa", "nutty"]
+    },
+    {
+      "id": "b7777777-7777-7777-7777-777777777777",
+      "name": "Brazil Santos",
+      "origin": "Brazil",
+      "variety": "Mundo Novo",
+      "process": "Natural",
+      "altitudeMeters": 1200,
+      "recommendedRoast": "medium",
+      "notes": ["chocolate", "nutty", "caramel"]
+    },
+    {
+      "id": "b8888888-8888-8888-8888-888888888888",
+      "name": "Rwanda Huye",
+      "origin": "Rwanda",
+      "variety": "Bourbon",
+      "process": "Washed",
+      "altitudeMeters": 1800,
+      "recommendedRoast": "light",
+      "notes": ["berry", "citrus", "stoneFruit"]
+    }
+  ],
+  "pairingGuides": [
+    {
+      "id": "g1111111-1111-1111-1111-111111111111",
+      "bean": {
+        "id": "b1111111-1111-1111-1111-111111111111",
+        "name": "Ethiopian Yirgacheffe",
+        "origin": "Ethiopia",
+        "variety": "Heirloom",
+        "process": "Washed",
+        "altitudeMeters": 2100,
+        "recommendedRoast": "light",
+        "notes": ["citrus", "floral", "berry"]
+      },
+      "method": "pourOver",
+      "pairings": [
+        { "id": "p1111111-1111-1111-1111-111111111111", "name": "Butter Croissant", "category": "Pastry", "accentFlavor": "caramel" },
+        { "id": "p1111111-1111-1111-1111-111111111112", "name": "Lemon Tart", "category": "Dessert", "accentFlavor": "citrus" }
+      ],
+      "whyItWorks": "Bright acidity balances buttery pastry and highlights citrus aromatics."
+    },
+    {
+      "id": "g2222222-2222-2222-2222-222222222222",
+      "bean": {
+        "id": "b2222222-2222-2222-2222-222222222222",
+        "name": "Panama Geisha",
+        "origin": "Panama",
+        "variety": "Geisha",
+        "process": "Natural",
+        "altitudeMeters": 1850,
+        "recommendedRoast": "light",
+        "notes": ["floral", "stoneFruit", "citrus"]
+      },
+      "method": "v60",
+      "pairings": [
+        { "id": "p2222222-2222-2222-2222-222222222221", "name": "Vanilla Shortbread", "category": "Cookie", "accentFlavor": "floral" },
+        { "id": "p2222222-2222-2222-2222-222222222222", "name": "Peach Danish", "category": "Pastry", "accentFlavor": "stoneFruit" }
+      ],
+      "whyItWorks": "Delicate florals and tea-like body pair best with subtle sweetness."
+    },
+    {
+      "id": "g3333333-3333-3333-3333-333333333333",
+      "bean": {
+        "id": "b3333333-3333-3333-3333-333333333333",
+        "name": "Colombia Huila",
+        "origin": "Colombia",
+        "variety": "Caturra",
+        "process": "Honey",
+        "altitudeMeters": 1700,
+        "recommendedRoast": "medium",
+        "notes": ["caramel", "nutty", "stoneFruit"]
+      },
+      "method": "aeropress",
+      "pairings": [
+        { "id": "p3333333-3333-3333-3333-333333333331", "name": "Banana Bread", "category": "Loaf", "accentFlavor": "caramel" },
+        { "id": "p3333333-3333-3333-3333-333333333332", "name": "Pecan Biscotti", "category": "Cookie", "accentFlavor": "nutty" }
+      ],
+      "whyItWorks": "Round body and caramel sweetness mirror baked goods and nuts."
+    },
+    {
+      "id": "g4444444-4444-4444-4444-444444444444",
+      "bean": {
+        "id": "b4444444-4444-4444-4444-444444444444",
+        "name": "Kenya AA Nyeri",
+        "origin": "Kenya",
+        "variety": "SL28",
+        "process": "Washed",
+        "altitudeMeters": 1950,
+        "recommendedRoast": "light",
+        "notes": ["berry", "citrus", "floral"]
+      },
+      "method": "pourOver",
+      "pairings": [
+        { "id": "p4444444-4444-4444-4444-444444444441", "name": "Blueberry Muffin", "category": "Pastry", "accentFlavor": "berry" }
+      ],
+      "whyItWorks": "Berry-forward cup amplifies fruit desserts and lively acidity."
+    },
+    {
+      "id": "g5555555-5555-5555-5555-555555555555",
+      "bean": {
+        "id": "b5555555-5555-5555-5555-555555555555",
+        "name": "Guatemala Antigua",
+        "origin": "Guatemala",
+        "variety": "Bourbon",
+        "process": "Washed",
+        "altitudeMeters": 1650,
+        "recommendedRoast": "mediumDark",
+        "notes": ["cocoa", "spice", "caramel"]
+      },
+      "method": "espresso",
+      "pairings": [
+        { "id": "p5555555-5555-5555-5555-555555555551", "name": "Dark Chocolate Tart", "category": "Dessert", "accentFlavor": "chocolate" },
+        { "id": "p5555555-5555-5555-5555-555555555552", "name": "Cinnamon Roll", "category": "Pastry", "accentFlavor": "spice" }
+      ],
+      "whyItWorks": "Cocoa depth and spice notes complement rich desserts and syrup textures."
+    },
+    {
+      "id": "g6666666-6666-6666-6666-666666666666",
+      "bean": {
+        "id": "b6666666-6666-6666-6666-666666666666",
+        "name": "Sumatra Mandheling",
+        "origin": "Indonesia",
+        "variety": "Typica",
+        "process": "Wet Hulled",
+        "altitudeMeters": 1500,
+        "recommendedRoast": "dark",
+        "notes": ["spice", "cocoa", "nutty"]
+      },
+      "method": "frenchPress",
+      "pairings": [
+        { "id": "p6666666-6666-6666-6666-666666666661", "name": "Molasses Cookie", "category": "Cookie", "accentFlavor": "spice" }
+      ],
+      "whyItWorks": "Heavy body and earthy spice stand up to dense, sweet baked goods."
+    },
+    {
+      "id": "g7777777-7777-7777-7777-777777777777",
+      "bean": {
+        "id": "b7777777-7777-7777-7777-777777777777",
+        "name": "Brazil Santos",
+        "origin": "Brazil",
+        "variety": "Mundo Novo",
+        "process": "Natural",
+        "altitudeMeters": 1200,
+        "recommendedRoast": "medium",
+        "notes": ["chocolate", "nutty", "caramel"]
+      },
+      "method": "latte",
+      "pairings": [
+        { "id": "p7777777-7777-7777-7777-777777777771", "name": "Hazelnut Cake", "category": "Dessert", "accentFlavor": "nutty" }
+      ],
+      "whyItWorks": "Chocolate base survives milk, making dessert pairings smooth and sweet."
+    },
+    {
+      "id": "g8888888-8888-8888-8888-888888888888",
+      "bean": {
+        "id": "b8888888-8888-8888-8888-888888888888",
+        "name": "Rwanda Huye",
+        "origin": "Rwanda",
+        "variety": "Bourbon",
+        "process": "Washed",
+        "altitudeMeters": 1800,
+        "recommendedRoast": "light",
+        "notes": ["berry", "citrus", "stoneFruit"]
+      },
+      "method": "coldBrew",
+      "pairings": [
+        { "id": "p8888888-8888-8888-8888-888888888881", "name": "Strawberry Scone", "category": "Pastry", "accentFlavor": "berry" }
+      ],
+      "whyItWorks": "Cold extraction smooths acidity while preserving bright fruit notes."
+    }
+  ]
+}

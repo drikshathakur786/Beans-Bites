@@ -1,0 +1,226 @@
+{
+  "selectedTab": "home",
+  "activeBrewMethod": "espresso",
+  "feedFilter": "trending",
+  "featuredRitual": {
+    "id": "r1111111-1111-1111-1111-111111111111",
+    "title": "V60 Sunrise Bloom",
+    "subtitle": "Ethiopian Yirgacheffe • Light Roast",
+    "method": "v60",
+    "level": "master",
+    "bean": {
+      "id": "b1111111-1111-1111-1111-111111111111",
+      "name": "Ethiopian Yirgacheffe",
+      "origin": "Ethiopia",
+      "variety": "Heirloom",
+      "process": "Washed",
+      "altitudeMeters": 2100,
+      "recommendedRoast": "light",
+      "notes": ["citrus", "floral", "berry"]
+    },
+    "roast": "light",
+    "pairing": {
+      "id": "p1111111-1111-1111-1111-111111111111",
+      "name": "Butter Croissant",
+      "category": "Pastry",
+      "accentFlavor": "caramel"
+    },
+    "metrics": {
+      "doseGrams": 24,
+      "waterMilliliters": 384,
+      "ratioText": "1:16",
+      "targetTimeSeconds": 195,
+      "temperatureCelsius": 94,
+      "milkTemperatureCelsius": null,
+      "grindSize": "medium"
+    },
+    "steps": [
+      { "id": "s1111111-1111-1111-1111-111111111111", "order": 1, "title": "Bloom", "details": "Pour 50g and wait.", "startSecond": 0, "endSecond": 45, "isActive": true }
+    ],
+    "tags": ["featured", "masterclass"],
+    "imageName": "ritual_v60",
+    "isSaved": true,
+    "isFeatured": true
+  },
+  "curatedRituals": [
+    {
+      "id": "r3333333-3333-3333-3333-333333333333",
+      "title": "Kyoto Midnight",
+      "subtitle": "12-hour immersion cold brew",
+      "method": "coldBrew",
+      "level": "intermediate",
+      "bean": {
+        "id": "b7777777-7777-7777-7777-777777777777",
+        "name": "Brazil Santos",
+        "origin": "Brazil",
+        "variety": "Mundo Novo",
+        "process": "Natural",
+        "altitudeMeters": 1200,
+        "recommendedRoast": "medium",
+        "notes": ["chocolate", "nutty", "caramel"]
+      },
+      "roast": "medium",
+      "pairing": null,
+      "metrics": {
+        "doseGrams": 80,
+        "waterMilliliters": 1000,
+        "ratioText": "1:12.5",
+        "targetTimeSeconds": 43200,
+        "temperatureCelsius": 20,
+        "milkTemperatureCelsius": null,
+        "grindSize": "coarse"
+      },
+      "steps": [],
+      "tags": ["seasonal"],
+      "imageName": "ritual_kyoto",
+      "isSaved": true,
+      "isFeatured": false
+    }
+  ],
+  "discoverCategories": [
+    { "id": "d1111111-1111-1111-1111-111111111111", "title": "Pairings", "subtitle": "24 Guides", "iconName": "wineglass", "keyword": "desserts" },
+    { "id": "d2222222-2222-2222-2222-222222222222", "title": "Beans", "subtitle": "Global Atlas", "iconName": "globe", "keyword": "origin" }
+  ],
+  "trendingRituals": [
+    {
+      "id": "r2222222-2222-2222-2222-222222222222",
+      "title": "Golden Hour Double Shot",
+      "subtitle": "Syrupy espresso with citrus finish",
+      "method": "espresso",
+      "level": "intermediate",
+      "bean": {
+        "id": "b3333333-3333-3333-3333-333333333333",
+        "name": "Colombia Huila",
+        "origin": "Colombia",
+        "variety": "Caturra",
+        "process": "Honey",
+        "altitudeMeters": 1700,
+        "recommendedRoast": "medium",
+        "notes": ["caramel", "nutty", "stoneFruit"]
+      },
+      "roast": "medium",
+      "pairing": null,
+      "metrics": {
+        "doseGrams": 18,
+        "waterMilliliters": 36,
+        "ratioText": "1:2",
+        "targetTimeSeconds": 28,
+        "temperatureCelsius": 94,
+        "milkTemperatureCelsius": null,
+        "grindSize": "fine"
+      },
+      "steps": [],
+      "tags": ["morningRitual"],
+      "imageName": "ritual_espresso",
+      "isSaved": false,
+      "isFeatured": false
+    }
+  ],
+  "editorialCards": [
+    { "id": "e1111111-1111-1111-1111-111111111111", "categoryLabel": "Editorial", "quote": "The first 30 seconds decide the bloom's aromatic ceiling.", "author": "Elena Rostova" }
+  ],
+  "pairingGuides": [
+    {
+      "id": "g1111111-1111-1111-1111-111111111111",
+      "bean": {
+        "id": "b1111111-1111-1111-1111-111111111111",
+        "name": "Ethiopian Yirgacheffe",
+        "origin": "Ethiopia",
+        "variety": "Heirloom",
+        "process": "Washed",
+        "altitudeMeters": 2100,
+        "recommendedRoast": "light",
+        "notes": ["citrus", "floral", "berry"]
+      },
+      "method": "pourOver",
+      "pairings": [
+        { "id": "p1111111-1111-1111-1111-111111111111", "name": "Butter Croissant", "category": "Pastry", "accentFlavor": "caramel" }
+      ],
+      "whyItWorks": "Bright acidity balances buttery pastry and highlights citrus aromatics."
+    }
+  ],
+  "communityPosts": [
+    {
+      "id": "c1111111-1111-1111-1111-111111111111",
+      "author": {
+        "id": "22222222-2222-2222-2222-222222222222",
+        "username": "@marcus_brews",
+        "displayName": "Marcus",
+        "avatarName": "avatar_marcus",
+        "level": 19,
+        "isFollowing": true
+      },
+      "ritual": {
+        "id": "r1111111-1111-1111-1111-111111111111",
+        "title": "V60 Sunrise Bloom",
+        "subtitle": "Ethiopian Yirgacheffe • Light Roast",
+        "method": "v60",
+        "level": "master",
+        "bean": {
+          "id": "b1111111-1111-1111-1111-111111111111",
+          "name": "Ethiopian Yirgacheffe",
+          "origin": "Ethiopia",
+          "variety": "Heirloom",
+          "process": "Washed",
+          "altitudeMeters": 2100,
+          "recommendedRoast": "light",
+          "notes": ["citrus", "floral", "berry"]
+        },
+        "roast": "light",
+        "pairing": null,
+        "metrics": {
+          "doseGrams": 24,
+          "waterMilliliters": 384,
+          "ratioText": "1:16",
+          "targetTimeSeconds": 195,
+          "temperatureCelsius": 94,
+          "milkTemperatureCelsius": null,
+          "grindSize": "medium"
+        },
+        "steps": [],
+        "tags": ["featured"],
+        "imageName": "ritual_v60",
+        "isSaved": false,
+        "isFeatured": true
+      },
+      "caption": "Mastering the 4:6 method this morning. #V60 #SpecialtyCoffee",
+      "hashtags": ["#V60", "#SpecialtyCoffee"],
+      "createdAt": "2026-02-19T08:00:00Z",
+      "likesCount": 1432,
+      "commentsCount": 84,
+      "isLikedByCurrentUser": true
+    }
+  ],
+  "profile": {
+    "user": {
+      "id": "11111111-1111-1111-1111-111111111111",
+      "username": "@alex_sterling",
+      "displayName": "Alex Sterling",
+      "avatarName": "avatar_alex",
+      "level": 24,
+      "isFollowing": true
+    },
+    "subtitle": "Master Brewer • LVL 24",
+    "stats": {
+      "ritualsCount": 128,
+      "savesCount": 42,
+      "winsCount": 12
+    },
+    "achievements": [
+      { "id": "a1111111-1111-1111-1111-111111111111", "title": "Origin Guru", "subtitle": "Unlocked", "iconName": "badge_origin", "isUnlocked": true }
+    ],
+    "brewHistory": [
+      { "id": "h1111111-1111-1111-1111-111111111111", "ritualTitle": "V60 Sunrise Bloom", "method": "v60", "roast": "light", "brewTemperatureCelsius": 94, "durationSeconds": 195, "brewedAt": "2026-02-19T08:20:00Z", "rating": 5, "thumbnailName": "ritual_v60" }
+    ],
+    "savedRituals": []
+  },
+  "communityDraft": {
+    "selectedImageName": null,
+    "coffeeOriginOrBlend": "",
+    "method": null,
+    "temperatureCelsius": null,
+    "pairingName": "",
+    "caption": "",
+    "includeMonthlyContest": false
+  }
+}
