@@ -120,13 +120,14 @@ private extension DateFormatter {
         BrewHistoryDetailView(
             log: BrewLog(
                 id: UUID(),
-                ritualTitle: "Standard Kalita Wave",
-                method: .kalitaWave,
+                ritualTitle: "Standard Pour Over",
+                method: .pourOver,
                 roast: .medium,
                 brewTemperatureCelsius: 93,
                 durationSeconds: 195,
+                brewedAt: Date(),
                 rating: 5,
-                brewedAt: Date()
+                thumbnailName: "sample_coffee_1"
             )
         )
     }

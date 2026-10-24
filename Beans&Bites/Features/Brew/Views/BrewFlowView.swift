@@ -180,17 +180,21 @@ struct BrewFlowView: View {
                 setupSliderRow(
                     icon: "scalemass.fill",
                     title: "Coffee Dose",
-                    valueText: "\(vm.doseGrams, specifier: "%.1f") g",
-                    slider: Slider(value: $vm.doseGrams, in: 10...40, step: 0.5).tint(CoffeeTheme.accentPrimary)
-                )
+                    valueText: String(format: "%.1f g", vm.doseGrams)
+                ) {
+                    Slider(value: $vm.doseGrams, in: 10...40, step: 0.5)
+                        .tint(CoffeeTheme.accentPrimary)
+                }
 
                 // Water Yield Slider
                 setupSliderRow(
                     icon: "drop.fill",
                     title: "Water Target",
-                    valueText: "\(vm.waterML) ml",
-                    slider: Slider(value: Binding(get: { Double(vm.waterML) }, set: { vm.waterML = Int($0) }), in: 100...800, step: 10).tint(CoffeeTheme.accentPrimary)
-                )
+                    valueText: "\(vm.waterML) ml"
+                ) {
+                    Slider(value: Binding(get: { Double(vm.waterML) }, set: { vm.waterML = Int($0) }), in: 100...800, step: 10)
+                        .tint(CoffeeTheme.accentPrimary)
+                }
 
                 // Grind Size Picker
                 HStack {
@@ -274,7 +278,7 @@ struct BrewFlowView: View {
         }
     }
 
-    private func setupSliderRow(icon: String, title: String, valueText: String, slider: Slider<EmptyView, EmptyView>) -> some View {
+    private func setupSliderRow<V: View>(icon: String, title: String, valueText: String, @ViewBuilder content: () -> V) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
                 HStack(spacing: 8) {
@@ -289,7 +293,7 @@ struct BrewFlowView: View {
                     .font(.subheadline.weight(.bold))
                     .foregroundStyle(CoffeeTheme.accentPrimary)
             }
-            slider
+            content()
         }
         .padding(14)
         .coffeeCard()

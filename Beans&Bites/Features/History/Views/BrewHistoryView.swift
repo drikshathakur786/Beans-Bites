@@ -186,16 +186,18 @@ struct BrewHistoryView: View {
 
     private func methodIcon(for method: BrewMethod) -> String {
         switch method {
-        case .v60, .chemex, .kalitaWave:
+        case .v60, .pourOver:
             return "drop.circle.fill"
         case .aeropress:
             return "cylinder.split.1x2.fill"
         case .frenchPress:
             return "water.waves"
-        case .espresso, .mokaPot:
+        case .espresso:
             return "flame.fill"
         case .coldBrew:
             return "snowflake"
+        case .latte, .flatWhite:
+            return "cup.and.saucer.fill"
         }
     }
 }
