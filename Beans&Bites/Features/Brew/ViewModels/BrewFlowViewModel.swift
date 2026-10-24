@@ -6,6 +6,7 @@
 import Foundation
 import Combine
 import UIKit
+import SwiftData
 
 struct BrewTemplateDraft: Identifiable, Codable, Hashable {
     var id: UUID
@@ -238,6 +239,7 @@ final class BrewFlowViewModel: ObservableObject {
 
     func saveBrewLog() {
         let rating = mapSliderToRating()
+        let title = activeRitualTitle ?? "\(selectedMethod.rawValue.capitalized) Brew"
 
         if let id = activeRitualID {
             store.logBrew(for: id, rating: rating)
@@ -249,6 +251,30 @@ final class BrewFlowViewModel: ObservableObject {
         } else {
             statusMessage = "Brew logged successfully!"
         }
+
+        // Persist to SwiftData
+        let context = CoffeeModelContainer.shared.mainContext
+        let entity = BrewSessionEntity(
+            ritualID: activeRitualID,
+            ritualTitle: title,
+            method: selectedMethod,
+            roast: roast,
+            brewTemperatureCelsius: 93,
+            durationSeconds: elapsedSeconds,
+            brewedAt: Date(),
+            rating: rating,
+            doseGrams: doseGrams,
+            waterML: waterML,
+            grindSize: grindSize,
+            acidity: acidity,
+            sweetness: sweetness,
+            bitterness: bitterness,
+            body: body,
+            flavorNotes: flavorNotes,
+            notes: notes
+        )
+        context.insert(entity)
+        try? context.save()
     }
 
     func saveAsTemplate() {

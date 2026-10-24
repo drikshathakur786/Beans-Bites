@@ -4,6 +4,7 @@
 //
 
 import SwiftUI
+import SwiftData
 
 @main
 struct BeansAndBitesApp: App {
@@ -11,5 +12,6 @@ struct BeansAndBitesApp: App {
         WindowGroup {
             AppRootView()
         }
+        .modelContainer(CoffeeModelContainer.shared)
     }
 }
