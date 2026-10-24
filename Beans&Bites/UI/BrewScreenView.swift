@@ -4,18 +4,14 @@
 //
 
 import SwiftUI
+import UIKit
 
 struct BrewScreenView: View {
     @ObservedObject private var store = AppDataStore.shared
 
     @State private var query: String = ""
     @State private var selectedFilter: BrewFilter = .all
-
-    private let bgTop = CoffeeTheme.bgPrimary
-    private let bgBottom = CoffeeTheme.bgSecondary
-    private let textPrimary = CoffeeTheme.textPrimary
-    private let textSecondary = CoffeeTheme.textSecondary
-    private let accent = CoffeeTheme.accentPrimary
+    @State private var selectedRitualForBrew: BrewRitual?
 
     private var allOfficialRituals: [BrewRitual] {
         uniqueRituals(store.curatedRituals + store.trendingRituals + [store.featuredRitual])
@@ -77,400 +73,332 @@ struct BrewScreenView: View {
 
     var body: some View {
         NavigationStack {
-            ZStack {
-                background
+            ScrollView(showsIndicators: false) {
+                VStack(alignment: .leading, spacing: 22) {
+                    headerSection
+                    searchBarSection
+                    filterChipsSection
 
-                ScrollView(showsIndicators: false) {
-                    VStack(alignment: .leading, spacing: 20) {
-                        topArea
-
-                        if let pairing = weeklyPairing {
-                            pairingOfTheWeekSection(pairing)
-                        }
-                        recipesSection
+                    if let pairing = weeklyPairing, query.isEmpty, selectedFilter == .all || selectedFilter == .pairings {
+                        featuredPairingSection(pairing)
                     }
-                    .padding(.horizontal, 16)
-                    .padding(.top, 12)
-                    .padding(.bottom, 102)
-                }
 
+                    recipesGridSection
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 12)
+                .padding(.bottom, 36)
             }
+            .background(CoffeeTheme.bgPrimary.ignoresSafeArea())
             .navigationBarHidden(true)
-        }
-    }
-
-    private var background: some View {
-        LinearGradient(colors: [bgTop, bgBottom], startPoint: .topLeading, endPoint: .bottomTrailing)
-            .ignoresSafeArea()
-    }
-
-    private var topArea: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            HStack {
-                Text("Brew")
-                    .font(.system(size: 32, weight: .semibold, design: .rounded))
-                    .foregroundColor(textPrimary)
-
-                Spacer()
-
-                NavigationLink(destination: CreateRecipeFlowView()) {
-                    Image(systemName: "plus")
-                        .font(.subheadline.weight(.bold))
-                        .foregroundColor(textPrimary)
-                        .frame(width: 40, height: 40)
-                        .background(CoffeeTheme.card)
-                        .clipShape(Circle())
-                        .overlay(Circle().stroke(CoffeeTheme.border, lineWidth: 1))
-                }
-                .buttonStyle(.plain)
-            }
-
-            LiquidGlassSearchBar(text: $query, placeholder: "Search rituals, pairings, creators")
-
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 10) {
-                    ForEach(BrewFilter.allCases, id: \.self) { filter in
-                        Button(filter.title) {
-                            selectedFilter = filter
-                        }
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundColor(selectedFilter == filter ? .white : textPrimary)
-                        .padding(.horizontal, 18)
-                        .padding(.vertical, 11)
-                        .background(selectedFilter == filter ? accent : CoffeeTheme.card)
-                        .clipShape(Capsule())
-                        .overlay(Capsule().stroke(CoffeeTheme.border, lineWidth: selectedFilter == filter ? 0 : 1))
-                    }
-                }
-                .padding(.vertical, 2)
+            .sheet(item: $selectedRitualForBrew) { ritual in
+                BrewFlowView(ritual: ritual)
             }
         }
     }
 
-    private func pairingOfTheWeekSection(_ ritual: BrewRitual) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Pairing of the Week")
-                .font(.system(size: 29, weight: .semibold, design: .rounded))
-                .foregroundColor(textPrimary)
-
-            ZStack(alignment: .bottomLeading) {
-                Image(ritual.imageName)
-                    .resizable()
-                    .scaledToFill()
-                    .frame(height: 320)
-                    .frame(maxWidth: .infinity)
-                    .clipped()
-
-                LinearGradient(
-                    colors: [Color.black.opacity(0.08), Color.black.opacity(0.62)],
-                    startPoint: .center,
-                    endPoint: .bottom
-                )
-
-                VStack(alignment: .leading, spacing: 8) {
-                    Text(ritual.title)
-                        .font(.system(size: 32, weight: .semibold, design: .rounded))
-                        .foregroundColor(textPrimary)
-                        .lineLimit(2)
-
-                    if let pairing = ritual.pairing {
-                        Text("with \(pairing.name)")
-                            .font(.title3.weight(.medium))
-                            .foregroundColor(textPrimary.opacity(0.92))
-                    }
-
-                    Text("Deep cocoa notes balanced by warm pastry sweetness. A perfect morning ritual.")
-                        .font(.body)
-                        .foregroundColor(textPrimary.opacity(0.82))
-                        .lineLimit(3)
-
-                    NavigationLink(destination: BrewDetailView(ritualID: ritual.id)) {
-                        HStack(spacing: 8) {
-                            Text("Brew This Pairing")
-                                .font(.headline.weight(.bold))
-                            Image(systemName: "arrow.right")
-                                .font(.subheadline.weight(.bold))
-                        }
-                        .foregroundColor(Color.black.opacity(0.72))
-                        .padding(.horizontal, 18)
-                        .padding(.vertical, 12)
-                        .background(accent)
-                        .clipShape(Capsule())
-                    }
-                }
-                .padding(18)
-            }
-            .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: 20, style: .continuous)
-                    .stroke(CoffeeTheme.border, lineWidth: 1)
-            )
-            .shadow(color: CoffeeTheme.shadow, radius: 6, x: 0, y: 3)
-        }
-    }
-
-    private var recipesSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Text("Recipes")
-                    .font(.system(size: 29, weight: .semibold, design: .rounded))
-                    .foregroundColor(textPrimary)
-                Spacer()
-                NavigationLink {
-                    PairingsListView(
-                        guides: store.pairingGuides,
-                        rituals: pairingRituals,
-                        creatorByRitualID: creatorByRitualID
-                    )
-                } label: {
-                    Text("See all")
-                        .font(.subheadline.weight(.bold))
-                        .foregroundColor(accent)
-                }
-                .buttonStyle(.plain)
-            }
-
-            let columns = [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)]
-            LazyVGrid(columns: columns, spacing: 12) {
-                ForEach(brewRituals.prefix(6)) { ritual in
-                    NavigationLink(destination: BrewDetailView(ritualID: ritual.id)) {
-                        recipeCard(ritual, creatorName: creatorByRitualID[ritual.id])
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-
-            if brewRituals.isEmpty {
-                Text("No recipes match this filter.")
-                    .font(.footnote)
-                    .foregroundColor(textSecondary)
-            }
-        }
-    }
-
-    private func recipeCard(_ ritual: BrewRitual, creatorName: String?) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack {
-                Text(creatorName == nil ? "OFFICIAL" : "CREATED")
+    // MARK: - Header
+    private var headerSection: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("DISCOVER & BREW")
                     .font(.caption2.weight(.bold))
-                    .tracking(1)
-                    .foregroundColor(textSecondary)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(Color.white.opacity(0.08))
-                    .clipShape(Capsule())
+                    .tracking(1.4)
+                    .foregroundStyle(CoffeeTheme.textTertiary)
 
-                Spacer()
-
-                Image(systemName: ritual.isSaved ? "heart.fill" : "heart")
-                    .foregroundColor(textSecondary)
+                Text("Recipes & Rituals")
+                    .font(.largeTitle.weight(.bold))
+                    .foregroundStyle(CoffeeTheme.textPrimary)
             }
 
             Spacer()
 
-            Text(ritual.title)
-                .font(.title3.weight(.semibold))
-                .foregroundColor(textPrimary)
-                .lineLimit(2)
+            NavigationLink(destination: CreateRecipeFlowView()) {
+                ZStack {
+                    Circle()
+                        .fill(CoffeeTheme.accentMuted.opacity(0.8))
+                        .frame(width: 44, height: 44)
+                    Image(systemName: "plus")
+                        .font(.system(size: 18, weight: .bold))
+                        .foregroundStyle(CoffeeTheme.accentPrimary)
+                }
+            }
+            .buttonStyle(PlainButtonStyle())
+        }
+    }
 
-            if let creatorName {
-                Text("by \(creatorName)")
-                    .font(.caption.weight(.medium))
-                    .foregroundColor(textSecondary)
-                    .lineLimit(1)
+    // MARK: - Search
+    private var searchBarSection: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "magnifyingglass")
+                .font(.subheadline)
+                .foregroundStyle(CoffeeTheme.textTertiary)
+
+            TextField("Search beans, roasts, methods...", text: $query)
+                .font(.subheadline)
+                .foregroundStyle(CoffeeTheme.textPrimary)
+
+            if !query.isEmpty {
+                Button {
+                    query = ""
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.caption)
+                        .foregroundStyle(CoffeeTheme.textTertiary)
+                }
+            }
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+        .background(CoffeeTheme.card)
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .stroke(CoffeeTheme.borderSubtle, lineWidth: 1)
+        )
+        .shadow(color: CoffeeTheme.shadowSubtle, radius: 4, x: 0, y: 2)
+    }
+
+    // MARK: - Filter Chips
+    private var filterChipsSection: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(BrewFilter.allCases, id: \.self) { filter in
+                    Button {
+                        selectedFilter = filter
+                    } label: {
+                        HStack(spacing: 6) {
+                            Image(systemName: filter.icon)
+                                .font(.caption2.weight(.semibold))
+                                .symbolRenderingMode(.hierarchical)
+                            Text(filter.title)
+                                .font(.caption.weight(.semibold))
+                        }
+                        .foregroundStyle(selectedFilter == filter ? .white : CoffeeTheme.textPrimary)
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 9)
+                        .background(selectedFilter == filter ? CoffeeTheme.accentPrimary : CoffeeTheme.card)
+                        .clipShape(Capsule())
+                        .overlay(
+                            Capsule()
+                                .stroke(selectedFilter == filter ? Color.clear : CoffeeTheme.border.opacity(0.6), lineWidth: 1)
+                        )
+                        .shadow(color: selectedFilter == filter ? CoffeeTheme.accentPrimary.opacity(0.2) : Color.clear, radius: 4, y: 2)
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                }
+            }
+        }
+    }
+
+    // MARK: - Featured Pairing Card
+    private func featuredPairingSection(_ ritual: BrewRitual) -> some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack {
+                HStack(spacing: 5) {
+                    Image(systemName: "fork.knife")
+                        .font(.caption2.weight(.bold))
+                    Text("PAIRING OF THE WEEK")
+                        .font(.caption2.weight(.bold))
+                        .tracking(1)
+                }
+                .foregroundStyle(CoffeeTheme.accentPrimary)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 5)
+                .background(CoffeeTheme.accentMuted.opacity(0.6))
+                .clipShape(Capsule())
+
+                Spacer()
+
+                if let pairing = ritual.pairing {
+                    Text(pairing.category)
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(CoffeeTheme.textTertiary)
+                }
             }
 
-            Text("\(ritual.totalBrewTimeText) • \(difficultyLabel(ritual.level))")
-                .font(.body)
-                .foregroundColor(textSecondary)
+            VStack(alignment: .leading, spacing: 4) {
+                Text(ritual.title)
+                    .font(.title3.weight(.bold))
+                    .foregroundStyle(CoffeeTheme.textPrimary)
 
-            Text(flavorTags(for: ritual))
-                .font(.caption.weight(.semibold))
-                .foregroundColor(accent)
-                .lineLimit(1)
+                if let pairing = ritual.pairing {
+                    Text("Paired with \(pairing.name)")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(CoffeeTheme.accentPrimary)
+                }
+
+                Text("A calibrated tasting harmony between bright acidity and rich pastry notes.")
+                    .font(.caption)
+                    .foregroundStyle(CoffeeTheme.textSecondary)
+                    .lineLimit(2)
+            }
+
+            HStack(spacing: 12) {
+                NavigationLink(destination: BrewDetailView(ritualID: ritual.id)) {
+                    Text("View Pairing")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(CoffeeTheme.textSecondary)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 10)
+                        .background(CoffeeTheme.cardAlt)
+                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                }
+
+                Button {
+                    let generator = UIImpactFeedbackGenerator(style: .medium)
+                    generator.impactOccurred()
+                    selectedRitualForBrew = ritual
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "play.fill")
+                            .font(.caption2.weight(.bold))
+                        Text("Brew Now")
+                            .font(.caption.weight(.bold))
+                    }
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 10)
+                    .background(CoffeeTheme.accentPrimary)
+                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                }
+            }
         }
-        .frame(maxWidth: .infinity, minHeight: 216, alignment: .leading)
-        .padding(12)
+        .padding(18)
+        .coffeeCard()
+    }
+
+    // MARK: - Recipes Grid
+    private var recipesGridSection: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack {
+                Text("All Recipes")
+                    .font(.title3.weight(.bold))
+                    .foregroundStyle(CoffeeTheme.textPrimary)
+
+                Spacer()
+
+                Text("\(brewRituals.count) available")
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(CoffeeTheme.textTertiary)
+            }
+
+            if brewRituals.isEmpty {
+                VStack(spacing: 10) {
+                    Image(systemName: "cup.and.saucer")
+                        .font(.largeTitle)
+                        .foregroundStyle(CoffeeTheme.textTertiary)
+                    Text("No recipes found matching your filter.")
+                        .font(.subheadline)
+                        .foregroundStyle(CoffeeTheme.textSecondary)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 32)
+                .coffeeCard()
+            } else {
+                let columns = [GridItem(.flexible(), spacing: 14), GridItem(.flexible(), spacing: 14)]
+                LazyVGrid(columns: columns, spacing: 14) {
+                    ForEach(brewRituals) { ritual in
+                        NavigationLink(destination: BrewDetailView(ritualID: ritual.id)) {
+                            recipeGridCard(ritual, creatorName: creatorByRitualID[ritual.id])
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                    }
+                }
+            }
+        }
+    }
+
+    private func recipeGridCard(_ ritual: BrewRitual, creatorName: String?) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            // Top Row: Method Icon & Heart
+            HStack {
+                ZStack {
+                    Circle()
+                        .fill(CoffeeTheme.cardAlt)
+                        .frame(width: 36, height: 36)
+                    Image(systemName: methodIcon(for: ritual.method))
+                        .font(.system(size: 16))
+                        .foregroundStyle(CoffeeTheme.accentPrimary)
+                }
+
+                Spacer()
+
+                Button {
+                    let generator = UIImpactFeedbackGenerator(style: .light)
+                    generator.impactOccurred()
+                    store.toggleSave(ritualID: ritual.id)
+                } label: {
+                    Image(systemName: ritual.isSaved ? "heart.fill" : "heart")
+                        .font(.subheadline)
+                        .foregroundStyle(ritual.isSaved ? Color.red.opacity(0.85) : CoffeeTheme.textTertiary)
+                }
+            }
+
+            // Recipe Title
+            Text(ritual.title)
+                .font(.headline.weight(.bold))
+                .foregroundStyle(CoffeeTheme.textPrimary)
+                .lineLimit(2)
+                .frame(minHeight: 44, alignment: .topLeading)
+
+            // Bean Origin & Roast
+            HStack(spacing: 4) {
+                Text(ritual.bean.origin)
+                Text("•")
+                Text(ritual.roast.rawValue.capitalized)
+            }
+            .font(.caption2.weight(.medium))
+            .foregroundStyle(CoffeeTheme.textSecondary)
+            .lineLimit(1)
+
+            // Metrics Badge Row
+            HStack(spacing: 6) {
+                HStack(spacing: 3) {
+                    Image(systemName: "timer")
+                    Text(TimeFormatting.mmss(from: ritual.metrics.targetTimeSeconds))
+                }
+                Text("•")
+                HStack(spacing: 3) {
+                    Image(systemName: "scalemass")
+                    Text("\(ritual.metrics.doseGrams)g")
+                }
+            }
+            .font(.system(size: 10, weight: .semibold))
+            .foregroundStyle(CoffeeTheme.textTertiary)
+
+            // Quick Brew CTA Pill
+            HStack {
+                Text(ritual.metrics.ratioText)
+                    .font(.caption2.weight(.bold))
+                    .foregroundStyle(CoffeeTheme.accentPrimary)
+
+                Spacer()
+
+                Image(systemName: "chevron.right.circle.fill")
+                    .font(.subheadline)
+                    .foregroundStyle(CoffeeTheme.accentPrimary.opacity(0.8))
+            }
+            .padding(.top, 4)
+        }
+        .padding(14)
         .coffeeCard(cornerRadius: 18)
     }
 
-    private func flavorTags(for ritual: BrewRitual) -> String {
-        ritual.bean.notes.prefix(2).map { $0.rawValue.capitalized }.joined(separator: "  ")
-    }
-
-    private func difficultyLabel(_ level: DifficultyLevel) -> String {
-        switch level {
-        case .beginner: return "Beginner"
-        case .intermediate: return "Intermediate"
-        case .advanced: return "Advanced"
-        case .master: return "Master"
+    private func methodIcon(for method: BrewMethod) -> String {
+        switch method {
+        case .espresso: return "cup.and.saucer.fill"
+        case .v60, .pourOver: return "drop.fill"
+        case .aeropress: return "capsule.portrait.fill"
+        case .frenchPress: return "mug.fill"
+        case .coldBrew: return "snowflake"
+        case .latte, .flatWhite: return "heart.fill"
         }
     }
 
     private func uniqueRituals(_ rituals: [BrewRitual]) -> [BrewRitual] {
         var seen = Set<UUID>()
         return rituals.filter { seen.insert($0.id).inserted }
-    }
-}
-
-private struct PairingsListView: View {
-    let guides: [CoffeePairingGuide]
-    let rituals: [BrewRitual]
-    let creatorByRitualID: [UUID: String]
-
-    private let bg = CoffeeTheme.bgPrimary
-    private let textPrimary = CoffeeTheme.textPrimary
-    private let textSecondary = CoffeeTheme.textSecondary
-    private let accent = CoffeeTheme.accentPrimary
-
-    var body: some View {
-        ScrollView(showsIndicators: false) {
-            VStack(alignment: .leading, spacing: 12) {
-                if guides.isEmpty && rituals.isEmpty {
-                    Text("No pairings available yet.")
-                        .font(.footnote)
-                        .foregroundColor(textSecondary)
-                } else {
-                    if !guides.isEmpty {
-                        Text("Guide Pairings")
-                            .font(.headline.weight(.semibold))
-                            .foregroundColor(textPrimary)
-
-                        let guideColumns = [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)]
-                        LazyVGrid(columns: guideColumns, spacing: 12) {
-                            ForEach(guides) { guide in
-                                guideCard(guide)
-                            }
-                        }
-                    }
-
-                    if !rituals.isEmpty {
-                        Text("Ritual Pairings")
-                            .font(.headline.weight(.semibold))
-                            .foregroundColor(textPrimary)
-                            .padding(.top, guides.isEmpty ? 0 : 6)
-
-                        let ritualColumns = [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)]
-                        LazyVGrid(columns: ritualColumns, spacing: 12) {
-                            ForEach(rituals) { ritual in
-                                NavigationLink(destination: BrewDetailView(ritualID: ritual.id)) {
-                                    pairingCard(ritual, creatorName: creatorByRitualID[ritual.id])
-                                }
-                                .buttonStyle(.plain)
-                            }
-                        }
-                    }
-                }
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
-        }
-        .background(bg.ignoresSafeArea())
-        .navigationTitle("All Pairings")
-        .navigationBarTitleDisplayMode(.inline)
-    }
-
-    private func guideCard(_ guide: CoffeePairingGuide) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("GUIDE")
-                .font(.caption2.weight(.bold))
-                .tracking(1)
-                .foregroundColor(textSecondary)
-                .padding(.horizontal, 8)
-                .padding(.vertical, 4)
-                .background(Color.white.opacity(0.08))
-                .clipShape(Capsule())
-
-            Text(guide.bean.name)
-                .font(.title3.weight(.semibold))
-                .foregroundColor(textPrimary)
-                .lineLimit(2)
-
-            Text(methodLabel(guide.method))
-                .font(.caption.weight(.semibold))
-                .foregroundColor(accent)
-
-            Text(guide.pairings.map(\.name).joined(separator: " • "))
-                .font(.subheadline)
-                .foregroundColor(textSecondary)
-                .lineLimit(2)
-
-            Text(guide.whyItWorks)
-                .font(.caption)
-                .foregroundColor(textSecondary)
-                .lineLimit(3)
-        }
-        .frame(maxWidth: .infinity, minHeight: 216, alignment: .leading)
-        .padding(12)
-        .coffeeCard(cornerRadius: 18)
-    }
-
-    private func pairingCard(_ ritual: BrewRitual, creatorName: String?) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack {
-                Text(creatorName == nil ? "OFFICIAL" : "CREATED")
-                    .font(.caption2.weight(.bold))
-                    .tracking(1)
-                    .foregroundColor(textSecondary)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(Color.white.opacity(0.08))
-                    .clipShape(Capsule())
-
-                Spacer()
-
-                Image(systemName: ritual.isSaved ? "heart.fill" : "heart")
-                    .foregroundColor(textSecondary)
-            }
-
-            Spacer()
-
-            Text(ritual.title)
-                .font(.title3.weight(.semibold))
-                .foregroundColor(textPrimary)
-                .lineLimit(2)
-
-            if let creatorName {
-                Text("by \(creatorName)")
-                    .font(.caption.weight(.medium))
-                    .foregroundColor(textSecondary)
-                    .lineLimit(1)
-            }
-
-            Text("\(ritual.totalBrewTimeText) • \(difficultyLabel(ritual.level))")
-                .font(.body)
-                .foregroundColor(textSecondary)
-
-            Text(ritual.bean.notes.prefix(2).map { $0.rawValue.capitalized }.joined(separator: "  "))
-                .font(.caption.weight(.semibold))
-                .foregroundColor(accent)
-                .lineLimit(1)
-        }
-        .frame(maxWidth: .infinity, minHeight: 216, alignment: .leading)
-        .padding(12)
-        .coffeeCard(cornerRadius: 18)
-    }
-
-    private func difficultyLabel(_ level: DifficultyLevel) -> String {
-        switch level {
-        case .beginner: return "Beginner"
-        case .intermediate: return "Intermediate"
-        case .advanced: return "Advanced"
-        case .master: return "Master"
-        }
-    }
-
-    private func methodLabel(_ method: BrewMethod) -> String {
-        switch method {
-        case .pourOver: return "Pour Over"
-        case .aeropress: return "AeroPress"
-        case .frenchPress: return "French Press"
-        case .coldBrew: return "Cold Brew"
-        case .espresso: return "Espresso"
-        case .v60: return "V60"
-        case .latte: return "Latte"
-        case .flatWhite: return "Flat White"
-        }
     }
 }
 
@@ -488,6 +416,16 @@ private enum BrewFilter: String, CaseIterable {
         case .espresso: return "Espresso"
         case .coldBrew: return "Cold Brew"
         case .pairings: return "Pairings"
+        }
+    }
+
+    var icon: String {
+        switch self {
+        case .all: return "slider.horizontal.3"
+        case .pourOver: return "drop.fill"
+        case .espresso: return "cup.and.saucer.fill"
+        case .coldBrew: return "snowflake"
+        case .pairings: return "fork.knife"
         }
     }
 }
