@@ -14,6 +14,7 @@ struct ProfileScreenView: View {
     @State private var showComposer = false
     @State private var showEditProfile = false
     @State private var showInsights = false
+    @State private var showBeanCellar = false
     @State private var showSignOutConfirm = false
 
     private let bgTop = CoffeeTheme.bgPrimary
@@ -94,6 +95,9 @@ struct ProfileScreenView: View {
             .sheet(isPresented: $showInsights) {
                 InsightsScreenView()
             }
+            .sheet(isPresented: $showBeanCellar) {
+                BeanCellarScreenView()
+            }
             .confirmationDialog("Sign out?", isPresented: $showSignOutConfirm, titleVisibility: .visible) {
                 Button("Sign Out", role: .destructive) {
                     auth.signOut()
@@ -122,6 +126,21 @@ struct ProfileScreenView: View {
                     showInsights = true
                 } label: {
                     Image(systemName: "chart.line.uptrend.xyaxis")
+                        .font(.subheadline.weight(.bold))
+                        .foregroundStyle(accent)
+                        .frame(width: 40, height: 40)
+                        .background(CoffeeTheme.card)
+                        .clipShape(Circle())
+                        .overlay(Circle().stroke(CoffeeTheme.border, lineWidth: 1))
+                }
+                .buttonStyle(.plain)
+
+                Button {
+                    let generator = UIImpactFeedbackGenerator(style: .medium)
+                    generator.impactOccurred()
+                    showBeanCellar = true
+                } label: {
+                    Image(systemName: "shippingbox.fill")
                         .font(.subheadline.weight(.bold))
                         .foregroundStyle(accent)
                         .frame(width: 40, height: 40)
