@@ -769,7 +769,7 @@ private struct CreateCommunityRoomView: View {
 
     @State private var roomName: String = ""
     @State private var roomDescription: String = ""
-    @State private var selectedIcon: String = "☕"
+    @State private var selectedIcon: String = "cup.and.saucer.fill"
     @State private var selectedTopic: CommunityRoomTopic = .brewing
     @State private var isPrivate: Bool = false
     @State private var welcomeMessage: String = ""

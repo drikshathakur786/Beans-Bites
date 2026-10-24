@@ -10,58 +10,203 @@ struct BrewHistoryView: View {
 
     var body: some View {
         NavigationStack {
-            VStack(alignment: .leading, spacing: 12) {
-                Text("Brew History")
-                    .font(.title2.bold())
+            ScrollView(showsIndicators: false) {
+                VStack(alignment: .leading, spacing: 18) {
+                    // Header & Filter bar
+                    filterSection
 
-                HStack {
-                    Picker("Method", selection: $vm.selectedMethod) {
-                        Text("All").tag(Optional<BrewMethod>.none)
-                        ForEach(BrewMethod.allCases, id: \.self) { method in
-                            Text(method.rawValue.capitalized).tag(Optional(method))
+                    // Log Cards
+                    if vm.items.isEmpty {
+                        emptyState
+                    } else {
+                        LazyVStack(spacing: 12) {
+                            ForEach(vm.items) { log in
+                                NavigationLink(destination: BrewHistoryDetailView(log: log)) {
+                                    historyCard(log: log)
+                                }
+                                .buttonStyle(.plain)
+                            }
                         }
                     }
-
-                    Picker("Min Rating", selection: $vm.minimumRating) {
-                        ForEach(1...5, id: \.self) { rating in
-                            Text("\(rating)+").tag(rating)
-                        }
-                    }
-                    .pickerStyle(.menu)
                 }
-
-                ForEach(vm.items) { log in
-                    NavigationLink(destination: BrewHistoryDetailView(log: log)) {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(log.ritualTitle)
-                                .font(.headline)
-                                .foregroundColor(.primary)
-                            Text("\(log.method.rawValue.capitalized) • \(log.roast.rawValue.capitalized) • \(log.brewTemperatureCelsius)°C")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                            Text("Rating: \(String(repeating: "★", count: log.rating))")
-                                .font(.caption)
-                                .foregroundColor(.orange)
-                        }
-                        .padding(12)
-                        .background(Color.white)
-                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                    }
-                }
-
-                if vm.items.isEmpty {
-                    Text("No brews match the selected filters.")
-                        .font(.footnote)
-                        .foregroundColor(.secondary)
-                }
+                .padding(.horizontal, 20)
+                .padding(.top, 16)
+                .padding(.bottom, 32)
             }
-            .padding(16)
-            .background(Color(red: 0.96, green: 0.94, blue: 0.90).ignoresSafeArea())
+            .background(CoffeeTheme.bgPrimary.ignoresSafeArea())
+            .navigationTitle("Brew History")
+            .navigationBarTitleDisplayMode(.inline)
             .onChange(of: vm.selectedMethod) { _, _ in vm.reload() }
             .onChange(of: vm.minimumRating) { _, _ in vm.reload() }
             .onAppear { vm.reload() }
         }
     }
+
+    private var filterSection: some View {
+        HStack(spacing: 12) {
+            Menu {
+                Button("All Methods") {
+                    vm.selectedMethod = nil
+                }
+                Divider()
+                ForEach(BrewMethod.allCases, id: \.self) { method in
+                    Button(method.rawValue.capitalized) {
+                        vm.selectedMethod = method
+                    }
+                }
+            } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: "slider.horizontal.3")
+                        .font(.caption.weight(.semibold))
+                    Text(vm.selectedMethod?.rawValue.capitalized ?? "All Methods")
+                        .font(.subheadline.weight(.semibold))
+                    Image(systemName: "chevron.down")
+                        .font(.caption2.weight(.bold))
+                }
+                .foregroundStyle(CoffeeTheme.textPrimary)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 9)
+                .background(CoffeeTheme.card)
+                .clipShape(Capsule())
+                .overlay(Capsule().stroke(CoffeeTheme.border, lineWidth: 1))
+            }
+
+            Menu {
+                ForEach(1...5, id: \.self) { rating in
+                    Button("\(rating)+ Stars") {
+                        vm.minimumRating = rating
+                    }
+                }
+            } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: "star.fill")
+                        .font(.caption)
+                        .foregroundStyle(CoffeeTheme.accentWarmGold)
+                    Text("\(vm.minimumRating)+ Stars")
+                        .font(.subheadline.weight(.semibold))
+                    Image(systemName: "chevron.down")
+                        .font(.caption2.weight(.bold))
+                }
+                .foregroundStyle(CoffeeTheme.textPrimary)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 9)
+                .background(CoffeeTheme.card)
+                .clipShape(Capsule())
+                .overlay(Capsule().stroke(CoffeeTheme.border, lineWidth: 1))
+            }
+
+            Spacer()
+        }
+    }
+
+    private func historyCard(log: BrewLog) -> some View {
+        HStack(alignment: .top, spacing: 14) {
+            // Method icon badge
+            ZStack {
+                Circle()
+                    .fill(CoffeeTheme.accentPrimary.opacity(0.12))
+                    .frame(width: 44, height: 44)
+                Image(systemName: methodIcon(for: log.method))
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(CoffeeTheme.accentPrimary)
+            }
+
+            VStack(alignment: .leading, spacing: 6) {
+                HStack {
+                    Text(log.ritualTitle)
+                        .font(.headline)
+                        .foregroundStyle(CoffeeTheme.textPrimary)
+                    Spacer()
+                    // Star rating
+                    HStack(spacing: 2) {
+                        ForEach(1...5, id: \.self) { star in
+                            Image(systemName: star <= log.rating ? "star.fill" : "star")
+                                .font(.system(size: 11))
+                                .foregroundStyle(star <= log.rating ? CoffeeTheme.accentWarmGold : CoffeeTheme.textSecondary.opacity(0.3))
+                        }
+                    }
+                }
+
+                HStack(spacing: 8) {
+                    Text(log.method.rawValue.capitalized)
+                        .font(.caption.weight(.medium))
+                    Text("•")
+                        .font(.caption)
+                        .foregroundStyle(CoffeeTheme.textSecondary.opacity(0.5))
+                    Text("\(log.brewTemperatureCelsius)°C")
+                        .font(.caption.weight(.medium))
+                    Text("•")
+                        .font(.caption)
+                        .foregroundStyle(CoffeeTheme.textSecondary.opacity(0.5))
+                    Text(TimeFormatting.mmss(from: log.durationSeconds))
+                        .font(.caption.weight(.medium))
+                }
+                .foregroundStyle(CoffeeTheme.textSecondary)
+
+                Text(DateFormatter.historyRelative.string(from: log.brewedAt))
+                    .font(.caption2)
+                    .foregroundStyle(CoffeeTheme.textSecondary.opacity(0.8))
+            }
+
+            Image(systemName: "chevron.right")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(CoffeeTheme.textSecondary.opacity(0.4))
+                .padding(.top, 14)
+        }
+        .padding(14)
+        .background(CoffeeTheme.card)
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .stroke(CoffeeTheme.border, lineWidth: 1)
+        )
+        .shadow(color: CoffeeTheme.textPrimary.opacity(0.04), radius: 8, x: 0, y: 3)
+    }
+
+    private var emptyState: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "cup.and.saucer")
+                .font(.system(size: 44))
+                .foregroundStyle(CoffeeTheme.textSecondary.opacity(0.4))
+                .padding(.top, 40)
+
+            Text("No Brew Sessions Found")
+                .font(.headline)
+                .foregroundStyle(CoffeeTheme.textPrimary)
+
+            Text("Brew a cup using any ritual to see your sensory extraction logs recorded here.")
+                .font(.subheadline)
+                .foregroundStyle(CoffeeTheme.textSecondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 32)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 30)
+    }
+
+    private func methodIcon(for method: BrewMethod) -> String {
+        switch method {
+        case .v60, .chemex, .kalitaWave:
+            return "drop.circle.fill"
+        case .aeropress:
+            return "cylinder.split.1x2.fill"
+        case .frenchPress:
+            return "water.waves"
+        case .espresso, .mokaPot:
+            return "flame.fill"
+        case .coldBrew:
+            return "snowflake"
+        }
+    }
+}
+
+private extension DateFormatter {
+    static let historyRelative: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .short
+        return formatter
+    }()
 }
 
 #Preview {
