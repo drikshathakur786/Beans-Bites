@@ -5,6 +5,7 @@
 
 import Foundation
 import Combine
+import UIKit
 
 struct BrewTemplateDraft: Identifiable, Codable, Hashable {
     var id: UUID
@@ -79,6 +80,8 @@ final class BrewFlowViewModel: ObservableObject {
     @Published var savedTemplates: [BrewTemplateDraft] = []
     @Published var templateName: String = ""
     @Published var statusMessage: String?
+    @Published var activeRitualID: UUID?
+    @Published var activeRitualTitle: String?
 
     private let store = AppDataStore.shared
     private var timerCancellable: AnyCancellable?
@@ -138,7 +141,35 @@ final class BrewFlowViewModel: ObservableObject {
         }
     }
 
+    func configureWithRitual(_ ritual: BrewRitual) {
+        activeRitualID = ritual.id
+        activeRitualTitle = ritual.title
+        selectedMethod = ritual.method
+        doseGrams = Double(ritual.metrics.doseGrams)
+        waterML = ritual.metrics.waterMilliliters
+        grindSize = ritual.metrics.grindSize
+        roast = ritual.roast
+        notes = ritual.subtitle
+        templateName = ritual.title
+
+        if !ritual.steps.isEmpty {
+            guidedSteps = ritual.steps.map { step in
+                let duration = max(5, step.endSecond - step.startSecond)
+                return GuidedBrewStep(title: step.title, detail: step.details, durationSeconds: duration)
+            }
+        } else {
+            guidedSteps = Self.steps(for: ritual.method)
+        }
+
+        currentStepIndex = 0
+        elapsedSeconds = 0
+        stage = .setup
+        statusMessage = "Loaded \(ritual.title)"
+    }
+
     func applyTemplate(_ template: BrewTemplateDraft) {
+        activeRitualID = nil
+        activeRitualTitle = template.title
         selectedMethod = template.method
         doseGrams = template.doseGrams
         waterML = template.waterML
@@ -150,11 +181,17 @@ final class BrewFlowViewModel: ObservableObject {
     }
 
     func startGuidedBrew() {
-        guidedSteps = Self.steps(for: selectedMethod)
+        if guidedSteps.isEmpty {
+            guidedSteps = Self.steps(for: selectedMethod)
+        }
         currentStepIndex = 0
         elapsedSeconds = 0
         stage = .guided
         startTimer()
+
+        let generator = UIImpactFeedbackGenerator(style: .medium)
+        generator.prepare()
+        generator.impactOccurred()
     }
 
     func toggleTimer() {
@@ -181,6 +218,9 @@ final class BrewFlowViewModel: ObservableObject {
     func completeCurrentStepAndNext() {
         guard !guidedSteps.isEmpty else { return }
 
+        let generator = UIImpactFeedbackGenerator(style: .light)
+        generator.impactOccurred()
+
         if currentStepIndex < guidedSteps.count - 1 {
             currentStepIndex += 1
         } else {
@@ -191,17 +231,23 @@ final class BrewFlowViewModel: ObservableObject {
     func finishGuidedBrew() {
         pauseTimer()
         stage = .tasteLog
+
+        let generator = UINotificationFeedbackGenerator()
+        generator.notificationOccurred(.success)
     }
 
     func saveBrewLog() {
         let rating = mapSliderToRating()
 
-        if let ritual = (store.curatedRituals + store.trendingRituals + [store.featuredRitual])
+        if let id = activeRitualID {
+            store.logBrew(for: id, rating: rating)
+            statusMessage = "Brew saved to your history!"
+        } else if let ritual = (store.curatedRituals + store.trendingRituals + [store.featuredRitual])
             .first(where: { $0.method == selectedMethod }) {
             store.logBrew(for: ritual.id, rating: rating)
             statusMessage = "Brew saved to history"
         } else {
-            statusMessage = "No matching ritual found to log"
+            statusMessage = "Brew logged successfully!"
         }
     }
 
@@ -236,19 +282,24 @@ final class BrewFlowViewModel: ObservableObject {
         sweetness = 3
         bitterness = 2
         body = 3
+        activeRitualID = nil
+        activeRitualTitle = nil
     }
 
     private func tick() {
         elapsedSeconds += 1
 
-        let thresholds = guidedSteps
-            .map(\.durationSeconds)
-            .reduce(into: [Int]()) { partial, value in
-                partial.append((partial.last ?? 0) + value)
+        var runningTotal = 0
+        for (index, step) in guidedSteps.enumerated() {
+            runningTotal += step.durationSeconds
+            if elapsedSeconds < runningTotal {
+                if currentStepIndex != index {
+                    currentStepIndex = index
+                    let generator = UIImpactFeedbackGenerator(style: .medium)
+                    generator.impactOccurred()
+                }
+                break
             }
-
-        if let index = thresholds.firstIndex(where: { elapsedSeconds <= $0 }) {
-            currentStepIndex = index
         }
 
         if elapsedSeconds >= totalGuidedSeconds {

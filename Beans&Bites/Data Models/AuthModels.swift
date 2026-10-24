@@ -65,9 +65,15 @@ final class AuthDataModel: ObservableObject {
             .appendingPathComponent("auth_session")
             .appendingPathExtension("json")
 
-        // Always start from auth screen on app launch.
-        session = AuthSession(status: .signedOut, userID: nil, lastSignedInAt: nil)
-        Self.saveToDisk(session, at: archiveURL)
+        if let savedSession = Self.loadFromDisk(at: archiveURL) {
+            session = savedSession
+            if savedSession.status == .signedIn, let userID = savedSession.userID {
+                UserDataModel.shared.restoreLoggedInUser(id: userID)
+            }
+        } else {
+            session = AuthSession(status: .signedOut, userID: nil, lastSignedInAt: nil)
+            Self.saveToDisk(session, at: archiveURL)
+        }
     }
 
     // MARK: - Auth Actions

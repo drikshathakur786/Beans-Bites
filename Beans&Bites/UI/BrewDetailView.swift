@@ -8,6 +8,7 @@ import SwiftUI
 struct BrewDetailView: View {
     @ObservedObject private var store = AppDataStore.shared
     @Environment(\.dismiss) private var dismiss
+    @State private var showBrewFlow = false
 
     let ritualID: UUID
 
@@ -37,10 +38,14 @@ struct BrewDetailView: View {
                         ingredientsCard(ritual)
                         instructionsSection(ritual)
                         flavorPairingCard(ritual)
+                        startBrewSessionCard(ritual)
                     }
                     .padding(.horizontal, 16)
                     .padding(.top, 10)
                     .padding(.bottom, 26)
+                }
+                .sheet(isPresented: $showBrewFlow) {
+                    BrewFlowView(ritual: ritual)
                 }
                 .background(
                     LinearGradient(
@@ -406,6 +411,54 @@ struct BrewDetailView: View {
             return "Best with \(pairing.name) for a softer, sweeter sip."
         }
         return "Pairs beautifully with pastries or mild desserts."
+    }
+
+    private func startBrewSessionCard(_ ritual: BrewRitual) -> some View {
+        Button {
+            let generator = UIImpactFeedbackGenerator(style: .medium)
+            generator.prepare()
+            generator.impactOccurred()
+            showBrewFlow = true
+        } label: {
+            HStack(spacing: 14) {
+                ZStack {
+                    Circle()
+                        .fill(Color.white.opacity(0.22))
+                        .frame(width: 44, height: 44)
+                    Image(systemName: "timer")
+                        .font(.system(size: 20, weight: .bold))
+                        .foregroundStyle(.white)
+                }
+
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("Start Brewing Ritual")
+                        .font(.headline.weight(.bold))
+                    Text("Interactive timer • \(TimeFormatting.mmss(from: ritual.metrics.targetTimeSeconds))")
+                        .font(.caption)
+                        .foregroundStyle(.white.opacity(0.85))
+                }
+
+                Spacer()
+
+                Image(systemName: "arrow.right.circle.fill")
+                    .font(.title2)
+                    .foregroundStyle(.white)
+            }
+            .foregroundStyle(.white)
+            .padding(.horizontal, 18)
+            .padding(.vertical, 14)
+            .background(
+                LinearGradient(
+                    colors: [Color(hex: "D19046"), Color(hex: "A35E24")],
+                    startPoint: .leading,
+                    endPoint: .trailing
+                )
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+            .shadow(color: CoffeeTheme.accentPrimary.opacity(0.35), radius: 10, x: 0, y: 5)
+        }
+        .buttonStyle(PlainButtonStyle())
+        .padding(.top, 4)
     }
 
 }

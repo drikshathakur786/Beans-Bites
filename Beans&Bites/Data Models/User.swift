@@ -124,6 +124,12 @@ final class UserDataModel: ObservableObject {
         return true
     }
 
+    func restoreLoggedInUser(id: UUID) {
+        if users.contains(where: { $0.id == id }) {
+            loggedInUserID = id
+        }
+    }
+
     func logout() {
         loggedInUserID = nil
     }

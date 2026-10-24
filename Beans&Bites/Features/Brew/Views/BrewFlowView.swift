@@ -7,8 +7,15 @@ import SwiftUI
 
 struct BrewFlowView: View {
     @StateObject private var vm = BrewFlowViewModel()
+    @Environment(\.dismiss) private var dismiss
+
+    var ritual: BrewRitual?
 
     private let methodCards: [BrewMethod] = [.espresso, .v60, .frenchPress, .coldBrew, .aeropress, .latte, .flatWhite, .pourOver]
+
+    init(ritual: BrewRitual? = nil) {
+        self.ritual = ritual
+    }
 
     var body: some View {
         NavigationStack {
@@ -37,8 +44,22 @@ struct BrewFlowView: View {
                 .padding(16)
             }
             .background(Color(red: 0.95, green: 0.92, blue: 0.89).ignoresSafeArea())
-            .navigationTitle("Brew")
+            .navigationTitle(vm.activeRitualTitle ?? "Brew")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Close") {
+                        dismiss()
+                    }
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Color.orange)
+                }
+            }
+            .onAppear {
+                if let ritual {
+                    vm.configureWithRitual(ritual)
+                }
+            }
         }
     }
 
