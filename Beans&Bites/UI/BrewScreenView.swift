@@ -79,7 +79,7 @@ struct BrewScreenView: View {
                     searchBarSection
                     filterChipsSection
 
-                    if let pairing = weeklyPairing, query.isEmpty, selectedFilter == .all || selectedFilter == .pairings {
+                    if let pairing = weeklyPairing, query.isEmpty, selectedFilter == .pairings {
                         featuredPairingSection(pairing)
                     }
 

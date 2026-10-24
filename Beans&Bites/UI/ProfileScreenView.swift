@@ -72,7 +72,6 @@ struct ProfileScreenView: View {
                     topArea
                     headerSection
                     profileContentSection
-                    brewHistorySection
                     signOutSection
                 }
                 .padding(.horizontal, 16)
@@ -335,7 +334,7 @@ struct ProfileScreenView: View {
                         .buttonStyle(.plain)
                     }
                 }
-            } else {
+            } else if contentTab == .savedPairings {
                 if savedPairings.isEmpty {
                     Text("No saved pairings yet.")
                         .font(.footnote)
@@ -347,6 +346,17 @@ struct ProfileScreenView: View {
                             pairingRow(ritual)
                         }
                         .buttonStyle(.plain)
+                    }
+                }
+            } else {
+                if recentHistory.isEmpty {
+                    Text("No brews logged yet.")
+                        .font(.footnote)
+                        .foregroundColor(textSecondary)
+                        .padding(.vertical, 4)
+                } else {
+                    ForEach(recentHistory) { log in
+                        historyRow(log)
                     }
                 }
             }
@@ -568,12 +578,14 @@ private enum ProfileContentTab: CaseIterable {
     case drafts
     case publishedRecipes
     case savedPairings
+    case history
 
     var title: String {
         switch self {
         case .drafts: return "Drafts"
         case .publishedRecipes: return "Published"
         case .savedPairings: return "Saved"
+        case .history: return "History"
         }
     }
 }
