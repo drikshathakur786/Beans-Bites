@@ -251,11 +251,14 @@ struct CommunityScreenView: View {
 
     private func roomRow(_ room: CommunityRoom, showJoinedBadge: Bool, showActivityDetails: Bool) -> some View {
         HStack(spacing: 12) {
-            Text(room.icon)
-                .font(.title3)
-                .frame(width: 42, height: 42)
-                .background(CoffeeTheme.cardAlt.opacity(0.9))
-                .clipShape(Circle())
+            ZStack {
+                Circle()
+                    .fill(CoffeeTheme.cardAlt.opacity(0.9))
+                    .frame(width: 42, height: 42)
+                Image(systemName: room.icon)
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(CoffeeTheme.accentPrimary)
+            }
 
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 6) {
@@ -363,7 +366,7 @@ struct CommunityScreenView: View {
                 id: UUID(),
                 title: "Daily Brew Chat",
                 description: "Your everyday coffee check-in.",
-                icon: "☕",
+                icon: "cup.and.saucer.fill",
                 kind: .official,
                 activeNow: 12,
                 totalMembers: 248,
@@ -377,7 +380,7 @@ struct CommunityScreenView: View {
                 id: UUID(),
                 title: "Origin Discussions",
                 description: "Beans, terroir, and processing notes.",
-                icon: "🌍",
+                icon: "globe.americas.fill",
                 kind: .official,
                 activeNow: 8,
                 totalMembers: 162,
@@ -390,7 +393,7 @@ struct CommunityScreenView: View {
                 id: UUID(),
                 title: "Technique & Tips",
                 description: "Dial in recipes together.",
-                icon: "🧪",
+                icon: "flask.fill",
                 kind: .official,
                 activeNow: 14,
                 totalMembers: 214,
@@ -403,7 +406,7 @@ struct CommunityScreenView: View {
                 id: UUID(),
                 title: "Monthly Challenge",
                 description: "Submit rituals for this month’s contest.",
-                icon: "🏆",
+                icon: "trophy.fill",
                 kind: .official,
                 activeNow: 19,
                 totalMembers: 301,
@@ -420,7 +423,7 @@ struct CommunityScreenView: View {
                 id: UUID(),
                 title: "Late Night Pour Overs",
                 description: "Quiet room for evening brewers.",
-                icon: "🌙",
+                icon: "moon.stars.fill",
                 kind: .community,
                 activeNow: 6,
                 totalMembers: 87,
@@ -433,7 +436,7 @@ struct CommunityScreenView: View {
                 id: UUID(),
                 title: "Croissant Pairing Club",
                 description: "Coffee and flaky pastry pairing notes.",
-                icon: "🥐",
+                icon: "fork.knife",
                 kind: .community,
                 activeNow: 9,
                 totalMembers: 126,
@@ -776,7 +779,7 @@ private struct CreateCommunityRoomView: View {
     private let textPrimary = CoffeeTheme.textPrimary
     private let textSecondary = CoffeeTheme.textSecondary
     private let accent = CoffeeTheme.accentPrimary
-    private let icons = ["☕", "🌍", "🧪", "🥐", "🌙", "🏆", "🫘", "🍮"]
+    private let icons = ["cup.and.saucer.fill", "globe.americas.fill", "flask.fill", "fork.knife", "moon.stars.fill", "trophy.fill", "flame.fill", "sparkles"]
 
     private var canCreate: Bool {
         !roomName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
@@ -800,17 +803,20 @@ private struct CreateCommunityRoomView: View {
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 8) {
                             ForEach(icons, id: \.self) { icon in
-                                Button(icon) {
+                                Button {
                                     selectedIcon = icon
+                                } label: {
+                                    Image(systemName: icon)
+                                        .font(.system(size: 18, weight: .semibold))
+                                        .foregroundStyle(selectedIcon == icon ? accent : CoffeeTheme.textSecondary)
+                                        .frame(width: 44, height: 44)
+                                        .background(selectedIcon == icon ? accent.opacity(0.20) : CoffeeTheme.bgSecondary)
+                                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                                .stroke(selectedIcon == icon ? accent : CoffeeTheme.border, lineWidth: 1)
+                                        )
                                 }
-                                .font(.title2)
-                                .frame(width: 44, height: 44)
-                                .background(selectedIcon == icon ? accent.opacity(0.20) : CoffeeTheme.bgSecondary)
-                                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                        .stroke(selectedIcon == icon ? accent : CoffeeTheme.border, lineWidth: 1)
-                                )
                             }
                         }
                     }

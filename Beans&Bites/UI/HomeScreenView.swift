@@ -385,7 +385,7 @@ struct HomeScreenView: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
                     ForEach(MoodOption.allCases, id: \.self) { mood in
-                        filterChip(title: mood.rawValue, isSelected: selectedMood == mood) {
+                        filterChip(title: mood.rawValue, icon: mood.icon, isSelected: selectedMood == mood) {
                             selectedMood = mood
                             showRecommendation = true
                         }
@@ -397,7 +397,7 @@ struct HomeScreenView: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
                     ForEach(PreferenceOption.allCases, id: \.self) { pref in
-                        filterChip(title: pref.rawValue, isSelected: selectedPreference == pref) {
+                        filterChip(title: pref.rawValue, icon: pref.icon, isSelected: selectedPreference == pref) {
                             selectedPreference = pref
                             showRecommendation = true
                         }
@@ -465,15 +465,20 @@ struct HomeScreenView: View {
         .coffeeCard()
     }
 
-    private func filterChip(title: String, isSelected: Bool, action: @escaping () -> Void) -> some View {
+    private func filterChip(title: String, icon: String, isSelected: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            Text(title)
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(isSelected ? .white : CoffeeTheme.textPrimary)
-                .padding(.horizontal, 14)
-                .padding(.vertical, 8)
-                .background(isSelected ? CoffeeTheme.accentPrimary : CoffeeTheme.cardAlt)
-                .clipShape(Capsule())
+            HStack(spacing: 6) {
+                Image(systemName: icon)
+                    .font(.caption2.weight(.semibold))
+                    .symbolRenderingMode(.hierarchical)
+                Text(title)
+                    .font(.caption.weight(.semibold))
+            }
+            .foregroundStyle(isSelected ? .white : CoffeeTheme.textPrimary)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 8)
+            .background(isSelected ? CoffeeTheme.accentPrimary : CoffeeTheme.cardAlt)
+            .clipShape(Capsule())
         }
         .buttonStyle(PlainButtonStyle())
     }
@@ -571,19 +576,39 @@ struct HomeScreenView: View {
 }
 
 private enum MoodOption: String, CaseIterable {
-    case calm = "Calm 🌿"
-    case focused = "Focused 🎯"
-    case energetic = "Energetic ⚡️"
-    case cozy = "Cozy 🛋️"
-    case creative = "Creative 🎨"
+    case calm = "Calm"
+    case focused = "Focused"
+    case energetic = "Energetic"
+    case cozy = "Cozy"
+    case creative = "Creative"
+
+    var icon: String {
+        switch self {
+        case .calm: return "leaf.fill"
+        case .focused: return "scope"
+        case .energetic: return "bolt.fill"
+        case .cozy: return "cup.and.saucer.fill"
+        case .creative: return "sparkles"
+        }
+    }
 }
 
 private enum PreferenceOption: String, CaseIterable {
-    case sweetBalanced = "Sweet & Balanced 🍯"
-    case brightCitrus = "Bright & Citrus 🍋"
-    case chocolateBold = "Chocolatey & Bold 🍫"
-    case floralLight = "Floral & Light 🌸"
-    case nuttySmooth = "Nutty & Smooth 🥜"
+    case sweetBalanced = "Sweet & Balanced"
+    case brightCitrus = "Bright & Citrus"
+    case chocolateBold = "Chocolatey & Bold"
+    case floralLight = "Floral & Light"
+    case nuttySmooth = "Nutty & Smooth"
+
+    var icon: String {
+        switch self {
+        case .sweetBalanced: return "circle.hexagongrid.fill"
+        case .brightCitrus: return "sun.max.fill"
+        case .chocolateBold: return "drop.fill"
+        case .floralLight: return "camera.macro"
+        case .nuttySmooth: return "oval.fill"
+        }
+    }
 }
 
 #Preview {
