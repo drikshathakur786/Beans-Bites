@@ -13,6 +13,7 @@ struct ProfileScreenView: View {
     @State private var contentTab: ProfileContentTab = .publishedRecipes
     @State private var showComposer = false
     @State private var showEditProfile = false
+    @State private var showInsights = false
     @State private var showSignOutConfirm = false
 
     private let bgTop = CoffeeTheme.bgPrimary
@@ -91,6 +92,9 @@ struct ProfileScreenView: View {
                     .presentationDetents([.large])
                     .presentationCornerRadius(34)
             }
+            .sheet(isPresented: $showInsights) {
+                InsightsScreenView()
+            }
             .confirmationDialog("Sign out?", isPresented: $showSignOutConfirm, titleVisibility: .visible) {
                 Button("Sign Out", role: .destructive) {
                     auth.signOut()
@@ -112,18 +116,35 @@ struct ProfileScreenView: View {
 
             Spacer()
 
-            Button {
-                showEditProfile = true
-            } label: {
-                Image(systemName: "square.and.pencil")
-                    .font(.subheadline.weight(.bold))
-                    .foregroundStyle(textPrimary)
-                    .frame(width: 40, height: 40)
-                    .background(CoffeeTheme.card)
-                    .clipShape(Circle())
-                    .overlay(Circle().stroke(CoffeeTheme.border, lineWidth: 1))
+            HStack(spacing: 10) {
+                Button {
+                    let generator = UIImpactFeedbackGenerator(style: .medium)
+                    generator.impactOccurred()
+                    showInsights = true
+                } label: {
+                    Image(systemName: "chart.line.uptrend.xyaxis")
+                        .font(.subheadline.weight(.bold))
+                        .foregroundStyle(accent)
+                        .frame(width: 40, height: 40)
+                        .background(CoffeeTheme.card)
+                        .clipShape(Circle())
+                        .overlay(Circle().stroke(CoffeeTheme.border, lineWidth: 1))
+                }
+                .buttonStyle(.plain)
+
+                Button {
+                    showEditProfile = true
+                } label: {
+                    Image(systemName: "square.and.pencil")
+                        .font(.subheadline.weight(.bold))
+                        .foregroundStyle(textPrimary)
+                        .frame(width: 40, height: 40)
+                        .background(CoffeeTheme.card)
+                        .clipShape(Circle())
+                        .overlay(Circle().stroke(CoffeeTheme.border, lineWidth: 1))
+                }
+                .buttonStyle(.plain)
             }
-            .buttonStyle(.plain)
         }
     }
 

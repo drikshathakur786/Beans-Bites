@@ -4,6 +4,7 @@
 //
 
 import SwiftUI
+import UIKit
 
 struct BrewFlowView: View {
     @StateObject private var vm = BrewFlowViewModel()
@@ -19,32 +20,37 @@ struct BrewFlowView: View {
 
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 16) {
-                    header
+            ZStack {
+                CoffeeTheme.bgPrimary.ignoresSafeArea()
 
-                    switch vm.stage {
-                    case .methodSelection:
-                        methodSelectionStage
-                    case .setup:
-                        setupStage
-                    case .guided:
-                        guidedStage
-                    case .tasteLog:
-                        tasteLogStage
-                    }
+                ScrollView(showsIndicators: false) {
+                    VStack(alignment: .leading, spacing: 20) {
+                        stageProgressBar
 
-                    if let statusMessage = vm.statusMessage {
-                        Text(statusMessage)
-                            .font(.footnote)
-                            .foregroundColor(.secondary)
-                            .padding(.top, 4)
+                        switch vm.stage {
+                        case .methodSelection:
+                            methodSelectionStage
+                        case .setup:
+                            setupStage
+                        case .guided:
+                            guidedStopwatchStage
+                        case .tasteLog:
+                            tasteLogStage
+                        }
+
+                        if let statusMessage = vm.statusMessage {
+                            Text(statusMessage)
+                                .font(.caption.weight(.medium))
+                                .foregroundStyle(CoffeeTheme.accentPrimary)
+                                .padding(.top, 4)
+                        }
                     }
+                    .padding(.horizontal, 20)
+                    .padding(.top, 12)
+                    .padding(.bottom, 36)
                 }
-                .padding(16)
             }
-            .background(Color(red: 0.95, green: 0.92, blue: 0.89).ignoresSafeArea())
-            .navigationTitle(vm.activeRitualTitle ?? "Brew")
+            .navigationTitle(vm.activeRitualTitle ?? "Brew Session")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -52,7 +58,7 @@ struct BrewFlowView: View {
                         dismiss()
                     }
                     .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(Color.orange)
+                    .foregroundStyle(CoffeeTheme.accentPrimary)
                 }
             }
             .onAppear {
@@ -63,322 +69,488 @@ struct BrewFlowView: View {
         }
     }
 
-    private var header: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text("Phase 1 Brew Flow")
-                .font(.caption.weight(.semibold))
-                .foregroundColor(.orange)
-            Text(stageTitle)
-                .font(.title2.bold())
-            Text(stageSubtitle)
-                .font(.subheadline)
-                .foregroundColor(.secondary)
+    // MARK: - Stage Progress Bar
+    private var stageProgressBar: some View {
+        HStack(spacing: 8) {
+            stageStepPill(label: "Setup", isActive: vm.stage == .methodSelection || vm.stage == .setup, isCompleted: vm.stage == .guided || vm.stage == .tasteLog)
+            stageStepPill(label: "Brew", isActive: vm.stage == .guided, isCompleted: vm.stage == .tasteLog)
+            stageStepPill(label: "Taste", isActive: vm.stage == .tasteLog, isCompleted: false)
         }
+        .padding(.vertical, 4)
     }
 
-    private var methodSelectionStage: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Select Brew Method")
-                .font(.headline)
+    private func stageStepPill(label: String, isActive: Bool, isCompleted: Bool) -> some View {
+        HStack(spacing: 5) {
+            if isCompleted {
+                Image(systemName: "checkmark")
+                    .font(.caption2.weight(.bold))
+            }
+            Text(label)
+                .font(.caption2.weight(.bold))
+                .tracking(0.6)
+        }
+        .foregroundStyle(isActive || isCompleted ? .white : CoffeeTheme.textTertiary)
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 8)
+        .background(isActive ? CoffeeTheme.accentPrimary : (isCompleted ? CoffeeTheme.accentSecondary : CoffeeTheme.card))
+        .clipShape(Capsule())
+        .overlay(
+            Capsule()
+                .stroke(isActive || isCompleted ? Color.clear : CoffeeTheme.border.opacity(0.6), lineWidth: 1)
+        )
+    }
 
-            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
+    // MARK: - Method Selection Stage
+    private var methodSelectionStage: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text("Select Brew Method")
+                .font(.title3.weight(.bold))
+                .foregroundStyle(CoffeeTheme.textPrimary)
+
+            LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)], spacing: 12) {
                 ForEach(methodCards, id: \.self) { method in
                     Button {
+                        let generator = UIImpactFeedbackGenerator(style: .light)
+                        generator.impactOccurred()
                         vm.selectMethod(method)
                     } label: {
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text(method.rawValue.capitalized)
-                                .font(.subheadline.bold())
-                            Text("Tap to choose")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                        }
-                        .frame(maxWidth: .infinity, minHeight: 84, alignment: .leading)
-                        .padding(10)
-                        .background(vm.selectedMethod == method ? Color.orange.opacity(0.2) : Color.white)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                .stroke(vm.selectedMethod == method ? Color.orange : Color.clear, lineWidth: 1)
-                        )
-                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
+                        HStack(spacing: 12) {
+                            ZStack {
+                                Circle()
+                                    .fill(vm.selectedMethod == method ? CoffeeTheme.accentPrimary.opacity(0.18) : CoffeeTheme.cardAlt)
+                                    .frame(width: 38, height: 38)
+                                Image(systemName: methodIcon(for: method))
+                                    .font(.system(size: 16, weight: .semibold))
+                                    .foregroundStyle(vm.selectedMethod == method ? CoffeeTheme.accentPrimary : CoffeeTheme.textSecondary)
+                            }
 
-            if !vm.savedTemplates.isEmpty {
-                Text("Saved Ritual Templates")
-                    .font(.headline)
-                    .padding(.top, 8)
-
-                ForEach(vm.savedTemplates.prefix(5)) { template in
-                    Button {
-                        vm.applyTemplate(template)
-                    } label: {
-                        HStack {
                             VStack(alignment: .leading, spacing: 2) {
-                                Text(template.title)
-                                    .font(.subheadline.bold())
-                                    .foregroundColor(.primary)
-                                Text("\(template.method.rawValue.capitalized) • \(template.doseGrams, specifier: "%.0f")g • \(template.waterML)ml")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
+                                Text(method.rawValue.capitalized)
+                                    .font(.subheadline.weight(.bold))
+                                    .foregroundStyle(CoffeeTheme.textPrimary)
+                                Text("Select")
+                                    .font(.caption2)
+                                    .foregroundStyle(CoffeeTheme.textTertiary)
                             }
                             Spacer()
-                            Image(systemName: "arrow.clockwise.circle")
-                                .foregroundColor(.orange)
                         }
                         .padding(12)
-                        .background(Color.white)
-                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        .background(vm.selectedMethod == method ? CoffeeTheme.accentMuted.opacity(0.3) : CoffeeTheme.card)
+                        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                .stroke(vm.selectedMethod == method ? CoffeeTheme.accentPrimary : CoffeeTheme.borderSubtle, lineWidth: 1)
+                        )
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(PlainButtonStyle())
                 }
             }
 
-            NavigationLink(destination: ExperimentModeView()) {
-                HStack {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Open Experiment Mode")
-                            .font(.subheadline.bold())
-                            .foregroundColor(.primary)
-                        Text("Compare grind and bloom variations side-by-side")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    }
-                    Spacer()
-                    Image(systemName: "slider.horizontal.3")
-                        .foregroundColor(.orange)
-                }
-                .padding(12)
-                .background(Color.white)
-                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-            }
-            .buttonStyle(.plain)
-
-            primaryButton("Continue to Setup") {
+            Button {
+                let generator = UIImpactFeedbackGenerator(style: .medium)
+                generator.impactOccurred()
                 vm.advance()
+            } label: {
+                HStack(spacing: 8) {
+                    Text("Continue to Recipe Setup")
+                        .font(.headline.weight(.bold))
+                    Image(systemName: "arrow.right")
+                        .font(.subheadline.weight(.bold))
+                }
+                .foregroundStyle(.white)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 14)
+                .background(CoffeeTheme.accentPrimary)
+                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .shadow(color: CoffeeTheme.accentPrimary.opacity(0.28), radius: 6, y: 3)
             }
+            .padding(.top, 6)
         }
     }
 
+    // MARK: - Setup Stage
     private var setupStage: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Brew Setup")
-                .font(.headline)
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Calibrate Parameters")
+                .font(.title3.weight(.bold))
+                .foregroundStyle(CoffeeTheme.textPrimary)
 
-            fieldCard {
+            VStack(spacing: 12) {
+                // Dose Slider
+                setupSliderRow(
+                    icon: "scalemass.fill",
+                    title: "Coffee Dose",
+                    valueText: "\(vm.doseGrams, specifier: "%.1f") g",
+                    slider: Slider(value: $vm.doseGrams, in: 10...40, step: 0.5).tint(CoffeeTheme.accentPrimary)
+                )
+
+                // Water Yield Slider
+                setupSliderRow(
+                    icon: "drop.fill",
+                    title: "Water Target",
+                    valueText: "\(vm.waterML) ml",
+                    slider: Slider(value: Binding(get: { Double(vm.waterML) }, set: { vm.waterML = Int($0) }), in: 100...800, step: 10).tint(CoffeeTheme.accentPrimary)
+                )
+
+                // Grind Size Picker
                 HStack {
-                    Text("Method")
+                    HStack(spacing: 8) {
+                        Image(systemName: "dial.medium")
+                            .foregroundStyle(CoffeeTheme.accentPrimary)
+                        Text("Grind Size")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(CoffeeTheme.textPrimary)
+                    }
                     Spacer()
-                    Text(vm.selectedMethod.rawValue.capitalized)
-                        .foregroundColor(.secondary)
-                }
-            }
-
-            fieldCard {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Coffee Dose: \(vm.doseGrams, specifier: "%.1f") g")
-                    Slider(value: $vm.doseGrams, in: 10...40, step: 0.5)
-                }
-            }
-
-            fieldCard {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Water: \(vm.waterML) ml")
-                    Slider(value: Binding(get: { Double(vm.waterML) }, set: { vm.waterML = Int($0) }), in: 100...1000, step: 10)
-                }
-            }
-
-            fieldCard {
-                Picker("Grind Size", selection: $vm.grindSize) {
-                    ForEach(GrindSize.allCases, id: \.self) { size in
-                        Text(size.rawValue.capitalized).tag(size)
+                    Picker("Grind Size", selection: $vm.grindSize) {
+                        ForEach(GrindSize.allCases, id: \.self) { size in
+                            Text(size.rawValue.capitalized).tag(size)
+                        }
                     }
+                    .pickerStyle(.menu)
+                    .tint(CoffeeTheme.accentPrimary)
                 }
-                .pickerStyle(.menu)
-            }
+                .padding(14)
+                .coffeeCard()
 
-            fieldCard {
-                Picker("Roast", selection: $vm.roast) {
-                    ForEach(RoastLevel.allCases, id: \.self) { roast in
-                        Text(roast.rawValue.capitalized).tag(roast)
+                // Roast Level Picker
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "flame.fill")
+                            .foregroundStyle(CoffeeTheme.accentPrimary)
+                        Text("Roast Level")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(CoffeeTheme.textPrimary)
                     }
+
+                    Picker("Roast", selection: $vm.roast) {
+                        ForEach(RoastLevel.allCases, id: \.self) { roast in
+                            Text(roast.rawValue.capitalized).tag(roast)
+                        }
+                    }
+                    .pickerStyle(.segmented)
                 }
-                .pickerStyle(.segmented)
+                .padding(14)
+                .coffeeCard()
             }
 
-            fieldCard {
-                TextField("Notes", text: $vm.notes, axis: .vertical)
-                    .lineLimit(2...4)
-            }
+            HStack(spacing: 12) {
+                Button {
+                    vm.back()
+                } label: {
+                    Text("Back")
+                        .font(.headline.weight(.semibold))
+                        .foregroundStyle(CoffeeTheme.textSecondary)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 14)
+                        .background(CoffeeTheme.card)
+                        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                .stroke(CoffeeTheme.border.opacity(0.8), lineWidth: 1)
+                        )
+                }
 
-            HStack(spacing: 10) {
-                secondaryButton("Back") { vm.back() }
-                primaryButton("Start Brew") { vm.advance() }
+                Button {
+                    let generator = UIImpactFeedbackGenerator(style: .medium)
+                    generator.impactOccurred()
+                    vm.advance()
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "play.fill")
+                            .font(.caption.weight(.bold))
+                        Text("Start Timer")
+                            .font(.headline.weight(.bold))
+                    }
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 14)
+                    .background(CoffeeTheme.accentPrimary)
+                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    .shadow(color: CoffeeTheme.accentPrimary.opacity(0.3), radius: 6, y: 3)
+                }
             }
+            .padding(.top, 4)
         }
     }
 
-    private var guidedStage: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Guided Brew Mode")
-                .font(.headline)
+    private func setupSliderRow(icon: String, title: String, valueText: String, slider: Slider<EmptyView, EmptyView>) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                HStack(spacing: 8) {
+                    Image(systemName: icon)
+                        .foregroundStyle(CoffeeTheme.accentPrimary)
+                    Text(title)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(CoffeeTheme.textPrimary)
+                }
+                Spacer()
+                Text(valueText)
+                    .font(.subheadline.weight(.bold))
+                    .foregroundStyle(CoffeeTheme.accentPrimary)
+            }
+            slider
+        }
+        .padding(14)
+        .coffeeCard()
+    }
 
-            fieldCard {
-                VStack(alignment: .leading, spacing: 8) {
-                    HStack {
-                        Text("Elapsed")
-                        Spacer()
-                        Text(TimeFormatting.mmss(from: vm.elapsedSeconds))
-                            .font(.headline.monospacedDigit())
+    // MARK: - Live Guided Stopwatch Stage
+    private var guidedStopwatchStage: some View {
+        VStack(spacing: 20) {
+            // Hero Circular Stopwatch Gauge
+            ZStack {
+                Circle()
+                    .stroke(CoffeeTheme.accentMuted.opacity(0.6), lineWidth: 12)
+                    .frame(width: 240, height: 240)
+
+                Circle()
+                    .trim(from: 0, to: vm.progress)
+                    .stroke(
+                        LinearGradient(
+                            colors: [CoffeeTheme.accentWarmGold, CoffeeTheme.accentPrimary],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        style: StrokeStyle(lineWidth: 12, lineCap: .round)
+                    )
+                    .rotationEffect(.degrees(-90))
+                    .frame(width: 240, height: 240)
+                    .animation(.linear(duration: 1.0), value: vm.progress)
+
+                VStack(spacing: 6) {
+                    Text(TimeFormatting.mmss(from: vm.elapsedSeconds))
+                        .font(.system(size: 48, weight: .bold, design: .rounded))
+                        .monospacedDigit()
+                        .foregroundStyle(CoffeeTheme.textPrimary)
+
+                    if let step = vm.currentStep {
+                        Text(step.title.uppercased())
+                            .font(.caption.weight(.bold))
+                            .tracking(1.2)
+                            .foregroundStyle(CoffeeTheme.accentPrimary)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 4)
+                            .background(CoffeeTheme.accentMuted.opacity(0.6))
+                            .clipShape(Capsule())
                     }
 
-                    ProgressView(value: vm.progress)
-                        .tint(.orange)
-
-                    HStack {
-                        Text("Step \(vm.currentStepIndex + 1) / \(max(1, vm.guidedSteps.count))")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                        Spacer()
-                        Text("Total: \(TimeFormatting.mmss(from: vm.totalGuidedSeconds))")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    }
+                    Text("Total: \(TimeFormatting.mmss(from: vm.totalGuidedSeconds))")
+                        .font(.caption2.weight(.medium))
+                        .foregroundStyle(CoffeeTheme.textTertiary)
                 }
             }
+            .padding(.vertical, 8)
 
+            // Current Step Instructions Card
             if let step = vm.currentStep {
-                fieldCard {
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text(step.title)
-                            .font(.headline)
-                        Text(step.detail)
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack {
+                        Text("STEP \(vm.currentStepIndex + 1) OF \(vm.guidedSteps.count)")
+                            .font(.system(size: 10, weight: .bold))
+                            .tracking(1)
+                            .foregroundStyle(CoffeeTheme.accentPrimary)
+                        Spacer()
                         Text("Target: \(TimeFormatting.mmss(from: step.durationSeconds))")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
+                            .font(.caption2.weight(.semibold))
+                            .foregroundStyle(CoffeeTheme.textTertiary)
                     }
+
+                    Text(step.title)
+                        .font(.headline.weight(.bold))
+                        .foregroundStyle(CoffeeTheme.textPrimary)
+
+                    Text(step.detail)
+                        .font(.subheadline)
+                        .foregroundStyle(CoffeeTheme.textSecondary)
+                        .lineLimit(3)
+                }
+                .padding(16)
+                .coffeeCard()
+            }
+
+            // Transport Control Buttons
+            HStack(spacing: 20) {
+                // Pause / Resume Main Button
+                Button {
+                    let generator = UIImpactFeedbackGenerator(style: .medium)
+                    generator.impactOccurred()
+                    vm.toggleTimer()
+                } label: {
+                    ZStack {
+                        Circle()
+                            .fill(CoffeeTheme.accentPrimary)
+                            .frame(width: 64, height: 64)
+                        Image(systemName: vm.isTimerRunning ? "pause.fill" : "play.fill")
+                            .font(.system(size: 24, weight: .bold))
+                            .foregroundStyle(.white)
+                    }
+                    .shadow(color: CoffeeTheme.accentPrimary.opacity(0.35), radius: 8, y: 4)
+                }
+
+                // Next Step Button
+                Button {
+                    vm.completeCurrentStepAndNext()
+                } label: {
+                    HStack(spacing: 6) {
+                        Text("Next Step")
+                            .font(.subheadline.weight(.bold))
+                        Image(systemName: "forward.fill")
+                            .font(.caption.weight(.bold))
+                    }
+                    .foregroundStyle(CoffeeTheme.textPrimary)
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 14)
+                    .background(CoffeeTheme.card)
+                    .clipShape(Capsule())
+                    .overlay(Capsule().stroke(CoffeeTheme.border, lineWidth: 1))
+                }
+
+                // Finish Early Button
+                Button {
+                    vm.finishGuidedBrew()
+                } label: {
+                    Text("Finish")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(CoffeeTheme.textTertiary)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 14)
                 }
             }
 
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Step Checklist")
-                    .font(.headline)
+            // Step Checklist Card
+            VStack(alignment: .leading, spacing: 10) {
+                Text("BREW PHASES")
+                    .font(.caption2.weight(.bold))
+                    .tracking(1)
+                    .foregroundStyle(CoffeeTheme.textTertiary)
 
                 ForEach(Array(vm.guidedSteps.enumerated()), id: \.element.id) { index, step in
-                    HStack {
-                        Image(systemName: index < vm.currentStepIndex ? "checkmark.circle.fill" : "circle")
-                            .foregroundColor(index < vm.currentStepIndex ? .green : .secondary)
-                        Text(step.title)
+                    HStack(spacing: 12) {
+                        Image(systemName: index < vm.currentStepIndex ? "checkmark.circle.fill" : (index == vm.currentStepIndex ? "circle.inset.filled" : "circle"))
                             .font(.subheadline)
+                            .foregroundStyle(index < vm.currentStepIndex ? CoffeeTheme.accentSuccess : (index == vm.currentStepIndex ? CoffeeTheme.accentPrimary : CoffeeTheme.textTertiary))
+
+                        Text(step.title)
+                            .font(.subheadline.weight(index == vm.currentStepIndex ? .bold : .medium))
+                            .foregroundStyle(index == vm.currentStepIndex ? CoffeeTheme.textPrimary : CoffeeTheme.textSecondary)
+
                         Spacer()
+
                         Text(TimeFormatting.mmss(from: step.durationSeconds))
-                            .font(.caption)
-                            .foregroundColor(.secondary)
+                            .font(.caption2.weight(.medium))
+                            .foregroundStyle(CoffeeTheme.textTertiary)
                     }
-                    .padding(.vertical, 4)
+                    .padding(.vertical, 3)
                 }
             }
-            .padding(12)
-            .background(Color.white)
-            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-
-            HStack(spacing: 10) {
-                secondaryButton(vm.isTimerRunning ? "Pause" : "Resume") { vm.toggleTimer() }
-                secondaryButton("Next Step") { vm.completeCurrentStepAndNext() }
-                primaryButton("Finish") { vm.finishGuidedBrew() }
-            }
+            .padding(16)
+            .coffeeCard()
         }
     }
 
+    // MARK: - Sensory Taste Log Stage
     private var tasteLogStage: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Taste Log")
-                .font(.headline)
-
-            sliderCard("Acidity", value: $vm.acidity)
-            sliderCard("Sweetness", value: $vm.sweetness)
-            sliderCard("Bitterness", value: $vm.bitterness)
-            sliderCard("Body", value: $vm.body)
-
-            fieldCard {
-                TextField("Flavor notes", text: $vm.flavorNotes, axis: .vertical)
-                    .lineLimit(2...4)
+        VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Sensory Taste Log")
+                    .font(.title2.weight(.bold))
+                    .foregroundStyle(CoffeeTheme.textPrimary)
+                Text("Rate your extraction to calibrate future recommendations.")
+                    .font(.caption)
+                    .foregroundStyle(CoffeeTheme.textSecondary)
             }
 
-            fieldCard {
-                TextField("Template name (optional)", text: $vm.templateName)
+            VStack(spacing: 12) {
+                sensorySliderRow(title: "Acidity", description: "Bright & crisp vs flat", value: $vm.acidity)
+                sensorySliderRow(title: "Sweetness", description: "Caramelized sugars vs raw", value: $vm.sweetness)
+                sensorySliderRow(title: "Bitterness", description: "Clean roast vs over-extracted", value: $vm.bitterness)
+                sensorySliderRow(title: "Body", description: "Silky mouthfeel vs watery", value: $vm.body)
             }
 
-            HStack(spacing: 10) {
-                primaryButton("Save Brew") { vm.saveBrewLog() }
-                secondaryButton("Save Template") { vm.saveAsTemplate() }
+            // Tasting Notes
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Tasting Notes")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(CoffeeTheme.textSecondary)
+
+                TextField("e.g. Jasmine aroma, dark cocoa finish...", text: $vm.flavorNotes, axis: .vertical)
+                    .lineLimit(2...3)
+                    .font(.subheadline)
+                    .padding(12)
+                    .background(CoffeeTheme.cardAlt)
+                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
             }
+            .padding(14)
+            .coffeeCard()
 
-            primaryButton("Done") { vm.reset() }
-        }
-    }
-
-    private func sliderCard(_ title: String, value: Binding<Double>) -> some View {
-        fieldCard {
-            VStack(alignment: .leading, spacing: 8) {
-                HStack {
-                    Text(title)
-                    Spacer()
-                    Text("\(value.wrappedValue, specifier: "%.1f")")
-                        .foregroundColor(.secondary)
+            // Save Actions
+            VStack(spacing: 10) {
+                Button {
+                    let generator = UINotificationFeedbackGenerator()
+                    generator.notificationOccurred(.success)
+                    vm.saveBrewLog()
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "checkmark.circle.fill")
+                        Text("Save to Brew History")
+                            .font(.headline.weight(.bold))
+                    }
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 14)
+                    .background(CoffeeTheme.accentPrimary)
+                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    .shadow(color: CoffeeTheme.accentPrimary.opacity(0.3), radius: 6, y: 3)
                 }
-                Slider(value: value, in: 1...5, step: 0.5)
-                    .tint(.orange)
+
+                Button {
+                    vm.reset()
+                    dismiss()
+                } label: {
+                    Text("Done")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(CoffeeTheme.textSecondary)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
+                }
             }
+            .padding(.top, 4)
         }
     }
 
-    private func fieldCard<Content: View>(@ViewBuilder content: () -> Content) -> some View {
-        content()
-            .padding(12)
-            .background(Color.white)
-            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-    }
+    private func sensorySliderRow(title: String, description: String, value: Binding<Double>) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title)
+                        .font(.subheadline.weight(.bold))
+                        .foregroundStyle(CoffeeTheme.textPrimary)
+                    Text(description)
+                        .font(.caption2)
+                        .foregroundStyle(CoffeeTheme.textTertiary)
+                }
+                Spacer()
+                Text("\(value.wrappedValue, specifier: "%.1f")")
+                    .font(.subheadline.weight(.bold))
+                    .foregroundStyle(CoffeeTheme.accentPrimary)
+            }
 
-    private func primaryButton(_ title: String, action: @escaping () -> Void) -> some View {
-        Button(title, action: action)
-            .font(.subheadline.weight(.semibold))
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 12)
-            .background(Color.orange)
-            .foregroundColor(.white)
-            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-    }
-
-    private func secondaryButton(_ title: String, action: @escaping () -> Void) -> some View {
-        Button(title, action: action)
-            .font(.subheadline.weight(.semibold))
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 12)
-            .background(Color.white)
-            .foregroundColor(.primary)
-            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-    }
-
-    private var stageTitle: String {
-        switch vm.stage {
-        case .methodSelection: return "Select Method"
-        case .setup: return "Brew Setup"
-        case .guided: return "Guided Brew"
-        case .tasteLog: return "Taste Log"
+            Slider(value: value, in: 1...5, step: 0.5)
+                .tint(CoffeeTheme.accentPrimary)
         }
+        .padding(14)
+        .coffeeCard()
     }
 
-    private var stageSubtitle: String {
-        switch vm.stage {
-        case .methodSelection: return "Choose your method or apply a saved ritual template."
-        case .setup: return "Configure brew parameters before starting the timer."
-        case .guided: return "Follow step-by-step instructions with pause/resume control."
-        case .tasteLog: return "Record sensory feedback and save as reusable template."
+    private func methodIcon(for method: BrewMethod) -> String {
+        switch method {
+        case .espresso: return "cup.and.saucer.fill"
+        case .v60, .pourOver: return "drop.fill"
+        case .aeropress: return "capsule.portrait.fill"
+        case .frenchPress: return "mug.fill"
+        case .coldBrew: return "snowflake"
+        case .latte, .flatWhite: return "heart.fill"
         }
     }
 }
