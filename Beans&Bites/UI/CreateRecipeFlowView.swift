@@ -64,7 +64,7 @@ private enum BrewingMethodOption: String, CaseIterable, Identifiable {
         case .v60: return "drop.fill"
         case .chemex: return "flask.fill"
         case .aeropress: return "capsule.portrait.fill"
-        case .frenchPress: return "frenchpress.fill"
+        case .frenchPress: return "water.waves"
         case .mokaPot: return "flame.fill"
         case .espressoMachine: return "cup.and.saucer.fill"
         case .coldBrew: return "snowflake"
