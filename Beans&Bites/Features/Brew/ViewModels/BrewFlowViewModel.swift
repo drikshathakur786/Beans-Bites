@@ -77,6 +77,7 @@ final class BrewFlowViewModel: ObservableObject {
     @Published var bitterness: Double = 2
     @Published var body: Double = 3
     @Published var flavorNotes: String = ""
+    @Published var selectedSCAFlavorNotes: [String] = []
 
     @Published var savedTemplates: [BrewTemplateDraft] = []
     @Published var templateName: String = ""
@@ -270,7 +271,7 @@ final class BrewFlowViewModel: ObservableObject {
             sweetness: sweetness,
             bitterness: bitterness,
             body: body,
-            flavorNotes: flavorNotes,
+            flavorNotes: ([flavorNotes] + selectedSCAFlavorNotes).map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }.joined(separator: ", "),
             notes: notes
         )
         context.insert(entity)

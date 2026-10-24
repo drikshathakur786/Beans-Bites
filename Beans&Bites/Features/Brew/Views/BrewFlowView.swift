@@ -472,13 +472,35 @@ struct BrewFlowView: View {
                 sensorySliderRow(title: "Body", description: "Silky mouthfeel vs watery", value: $vm.body)
             }
 
-            // Tasting Notes
+            // SCA Cupping Flavor Palette
+            VStack(alignment: .leading, spacing: 10) {
+                HStack {
+                    HStack(spacing: 6) {
+                        Image(systemName: "circle.hexagongrid.fill")
+                            .font(.caption)
+                            .foregroundStyle(CoffeeTheme.accentPrimary)
+                        Text("SCA Cupping Palette")
+                            .font(.subheadline.weight(.bold))
+                            .foregroundStyle(CoffeeTheme.textPrimary)
+                    }
+                    Spacer()
+                    Text("Tap notes to add")
+                        .font(.caption2)
+                        .foregroundStyle(CoffeeTheme.textTertiary)
+                }
+
+                SCAFlavorWheelPickerView(selectedNotes: $vm.selectedSCAFlavorNotes)
+            }
+            .padding(14)
+            .coffeeCard()
+
+            // Additional Cupping Notes
             VStack(alignment: .leading, spacing: 6) {
-                Text("Tasting Notes")
+                Text("Additional Tasting Observations")
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(CoffeeTheme.textSecondary)
 
-                TextField("e.g. Jasmine aroma, dark cocoa finish...", text: $vm.flavorNotes, axis: .vertical)
+                TextField("e.g. Silky mouthfeel, lingering cane sugar finish...", text: $vm.flavorNotes, axis: .vertical)
                     .lineLimit(2...3)
                     .font(.subheadline)
                     .padding(12)
