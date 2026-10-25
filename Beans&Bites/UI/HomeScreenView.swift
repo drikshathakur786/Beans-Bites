@@ -71,20 +71,19 @@ struct HomeScreenView: View {
     // MARK: - Header Section
     private var headerSection: some View {
         HStack(alignment: .center) {
-            VStack(alignment: .leading, spacing: 3) {
+            VStack(alignment: .leading, spacing: 2) {
                 Text(formattedDate)
-                    .font(.system(size: 11, weight: .bold))
+                    .font(.system(size: 10, weight: .bold))
                     .tracking(1.2)
                     .foregroundStyle(CoffeeTheme.textTertiary)
 
-                HStack(spacing: 5) {
-                    Text("\(greetingText),")
-                        .font(.title2.weight(.medium))
-                        .foregroundStyle(CoffeeTheme.textSecondary)
-                    Text(store.profile.user.displayName.components(separatedBy: " ").first ?? "Brewer")
-                        .font(.title2.weight(.bold))
-                        .foregroundStyle(CoffeeTheme.textPrimary)
-                }
+                Text("\(greetingText),")
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(CoffeeTheme.textSecondary)
+
+                Text(store.profile.user.displayName.components(separatedBy: " ").first ?? "Brewer")
+                    .font(.title2.weight(.bold))
+                    .foregroundStyle(CoffeeTheme.textPrimary)
             }
 
             Spacer()
