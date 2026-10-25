@@ -4,37 +4,39 @@
 //
 
 import SwiftUI
+import UIKit
 
 struct CoffeeTheme {
-    // Backgrounds: Clean, warm editorial off-white
-    static let bgPrimary = Color(hex: "FAF8F5")
-    static let bgSecondary = Color(hex: "F3EEE7")
+    // Dynamic Apple Canvas: adapts cleanly between Light and Dark mode
+    static let bgPrimary = Color(uiColor: .systemGroupedBackground)
+    static let bgSecondary = Color(uiColor: .secondarySystemGroupedBackground)
     
-    // Card Surfaces: Pure white elevation 1, warm tinted elevation 2
-    static let card = Color.white
-    static let cardAlt = Color(hex: "F8F4EE")
-    static let cardElevated = Color.white
+    // Apple Inset Grouped Card Surfaces
+    static let card = Color(uiColor: .secondarySystemGroupedBackground)
+    static let cardAlt = Color(uiColor: .tertiarySystemGroupedBackground)
+    static let cardElevated = Color(uiColor: .secondarySystemGroupedBackground)
 
-    // Accents: Warm roasted amber & deep rich roast mocha
-    static let accentPrimary = Color(hex: "B86B26")
-    static let accentSecondary = Color(hex: "3A2417")
-    static let accentWarmGold = Color(hex: "D88E3E")
-    static let accentMuted = Color(hex: "EFE5D9")
-    static let accentSuccess = Color(hex: "42824C")
+    // Curated Artisanal Specialty Accents
+    static let accentPrimary = Color(hex: "C26D28")     // Warm Roasted Amber
+    static let accentSecondary = Color(hex: "4A2E1B")   // Deep Espresso Bronze
+    static let accentWarmGold = Color(hex: "D98A36")    // Golden Crema
+    static let accentMuted = Color(hex: "F2E7DA")       // Frosted Latte Cream
+    static let accentSuccess = Color(hex: "34A853")     // Mint Extraction Green
 
-    // Typography hierarchy
-    static let textPrimary = Color(hex: "1F1713")
-    static let textSecondary = Color(hex: "6B5C52")
-    static let textTertiary = Color(hex: "9E8E83")
+    // Native Typography Scale (SF Pro hierarchy)
+    static let textPrimary = Color(uiColor: .label)
+    static let textSecondary = Color(uiColor: .secondaryLabel)
+    static let textTertiary = Color(uiColor: .tertiaryLabel)
 
-    // Borders & Elevation shadows
-    static let border = Color(hex: "EBE2D7")
-    static let borderSubtle = Color.black.opacity(0.04)
-    static let shadow = Color.black.opacity(0.04)
-    static let shadowSubtle = Color.black.opacity(0.02)
+    // Native Apple Borders & Precision Hairlines
+    static let border = Color.primary.opacity(0.08)
+    static let borderSubtle = Color.primary.opacity(0.05)
+    static let shadow = Color.black.opacity(0.05)
+    static let shadowSubtle = Color.black.opacity(0.03)
     static let shadowElevated = Color.black.opacity(0.08)
 }
 
+// MARK: - Color Hex Initializer
 extension Color {
     init(hex: String) {
         let hex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
@@ -62,26 +64,56 @@ extension Color {
     }
 }
 
+// MARK: - Native Apple Glass & Elevation Modifiers
 extension View {
+    /// Apple Inset Grouped Card with subtle hairline border and native shadow
     func coffeeCard(cornerRadius: CGFloat = 20) -> some View {
         self
             .background(CoffeeTheme.card)
             .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                    .stroke(CoffeeTheme.borderSubtle, lineWidth: 1)
+                    .stroke(CoffeeTheme.border, lineWidth: 0.8)
             )
-            .shadow(color: CoffeeTheme.shadow, radius: 10, x: 0, y: 4)
+            .shadow(color: CoffeeTheme.shadow, radius: 10, x: 0, y: 3)
     }
 
+    /// Apple Translucent Frosted Glass Card (Glassmorphism)
+    func glassCard(cornerRadius: CGFloat = 20) -> some View {
+        self
+            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .stroke(Color.white.opacity(0.25), lineWidth: 0.8)
+            )
+            .shadow(color: Color.black.opacity(0.06), radius: 12, x: 0, y: 4)
+    }
+
+    /// Secondary Inset Card
     func coffeeSecondaryCard(cornerRadius: CGFloat = 16) -> some View {
         self
             .background(CoffeeTheme.cardAlt)
             .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                    .stroke(CoffeeTheme.border.opacity(0.6), lineWidth: 1)
+                    .stroke(CoffeeTheme.borderSubtle, lineWidth: 0.8)
             )
-            .shadow(color: CoffeeTheme.shadowSubtle, radius: 6, x: 0, y: 2)
+    }
+}
+
+// MARK: - Native Tactile Spring Button Style
+struct PressableBounceButtonStyle: ButtonStyle {
+    var scaleAmount: CGFloat = 0.97
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? scaleAmount : 1.0)
+            .animation(.spring(response: 0.3, dampingFraction: 0.7), value: configuration.isPressed)
+    }
+}
+
+extension ButtonStyle where Self == PressableBounceButtonStyle {
+    static var bounce: PressableBounceButtonStyle {
+        PressableBounceButtonStyle()
     }
 }

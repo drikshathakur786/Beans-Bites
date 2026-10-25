@@ -13,12 +13,6 @@ struct CommunityScreenView: View {
     @State private var rooms: [CommunityRoom] = []
     @State private var showCreateCommunity = false
     @State private var joinedRoomIDs: Set<UUID> = []
-    @State private var scrollOffset: CGFloat = 0
-    @FocusState private var searchFocused: Bool
-
-    private let accent = CoffeeTheme.accentPrimary
-    private let bgTop = Color(hex: "F5EFE8")
-    private let bgBottom = Color(hex: "E8DCCF")
 
     private var filteredOfficialRooms: [CommunityRoom] {
         filterRooms(rooms.filter { $0.kind == .official && !joinedRoomIDs.contains($0.id) })
@@ -32,50 +26,53 @@ struct CommunityScreenView: View {
         filterRooms(rooms.filter { joinedRoomIDs.contains($0.id) })
     }
 
-    private var collapseProgress: CGFloat {
-        min(max(-scrollOffset / 86, 0), 1)
-    }
-
     var body: some View {
         NavigationStack {
-            ZStack(alignment: .bottom) {
-                LinearGradient(colors: [bgTop, bgBottom], startPoint: .topLeading, endPoint: .bottomTrailing)
-                    .ignoresSafeArea()
-
-                ScrollView(showsIndicators: false) {
-                    GeometryReader { proxy in
-                        Color.clear
-                            .preference(key: CommunityScrollOffsetKey.self, value: proxy.frame(in: .named("communityScroll")).minY)
+            ScrollView(showsIndicators: false) {
+                VStack(alignment: .leading, spacing: 24) {
+                    if !joinedRooms.isEmpty {
+                        channelSection(title: "MY CHANNELS", rooms: joinedRooms, isJoinedSection: true)
                     }
-                    .frame(height: 0)
 
-                    VStack(alignment: .leading, spacing: 18) {
-                        Color.clear.frame(height: 146)
+                    channelSection(title: "OFFICIAL CHANNELS", rooms: filteredOfficialRooms)
 
-                        if !joinedRooms.isEmpty {
-                            joinedSectionGroup(rooms: joinedRooms)
-                        }
-                        sectionGroup(title: "OFFICIAL ROOMS", rooms: filteredOfficialRooms)
-                        sectionGroup(title: "COMMUNITY ROOMS", rooms: filteredCommunityRooms)
-                    }
-                    .padding(.horizontal, 16)
-                    .padding(.bottom, 24)
+                    channelSection(title: "COMMUNITY CHANNELS", rooms: filteredCommunityRooms)
                 }
-                .coordinateSpace(name: "communityScroll")
-                .onPreferenceChange(CommunityScrollOffsetKey.self) { value in
-                    scrollOffset = value
-                }
-
-                topOverlay
+                .padding(.horizontal, 20)
+                .padding(.top, 12)
+                .padding(.bottom, 64)
             }
-            .navigationBarHidden(true)
+            .background(CoffeeTheme.bgPrimary.ignoresSafeArea())
+            .navigationTitle("Community")
+            .navigationBarTitleDisplayMode(.large)
+            .searchable(
+                text: $searchQuery,
+                placement: .automatic,
+                prompt: "Search channels and discussions..."
+            )
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        let generator = UIImpactFeedbackGenerator(style: .medium)
+                        generator.impactOccurred()
+                        showCreateCommunity = true
+                    } label: {
+                        Image(systemName: "plus")
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundStyle(CoffeeTheme.accentPrimary)
+                    }
+                    .accessibilityLabel("Create channel")
+                }
+            }
             .navigationDestination(for: CommunityRoom.self) { room in
                 RoomChatView(room: room, isJoined: joinedBinding(for: room))
             }
-            .navigationDestination(isPresented: $showCreateCommunity) {
+            .sheet(isPresented: $showCreateCommunity) {
                 CreateCommunityRoomView { request in
                     addCommunityRoom(from: request)
                 }
+                .presentationDetents([.large])
+                .presentationCornerRadius(32)
             }
             .onAppear {
                 if rooms.isEmpty {
@@ -85,195 +82,78 @@ struct CommunityScreenView: View {
         }
     }
 
-    private var topOverlay: some View {
-        VStack(spacing: 12) {
-            HStack(spacing: 12) {
-                Text("Community")
-                    .font(.system(size: 32 - (collapseProgress * 4), weight: .semibold, design: .rounded))
-                    .foregroundStyle(CoffeeTheme.textPrimary)
-                    .lineLimit(1)
-
-                Spacer()
-
-                actionGlassButton(systemName: "plus") {
-                    showCreateCommunity = true
-                }
-            }
-
-            searchField
-        }
-        .padding(.horizontal, 16)
-        .padding(.top, 8)
-        .padding(.bottom, 10)
-        .background(
-            Rectangle()
-                .fill(.ultraThinMaterial)
-                .opacity(collapseProgress)
-                .ignoresSafeArea(edges: .top)
-        )
-        .shadow(color: CoffeeTheme.shadow.opacity(0.35 * collapseProgress), radius: 6, x: 0, y: 2)
-        .frame(maxHeight: .infinity, alignment: .top)
-    }
-
-    private var searchField: some View {
-        HStack(spacing: 10) {
-            Image(systemName: "magnifyingglass")
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(CoffeeTheme.textSecondary)
-
-            TextField("Search rooms", text: $searchQuery)
-                .focused($searchFocused)
-                .font(.subheadline)
-                .foregroundStyle(CoffeeTheme.textPrimary)
-                .tint(accent)
-        }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 12)
-        .background(.ultraThinMaterial)
-        .clipShape(Capsule())
-        .overlay(
-            Capsule()
-                .stroke(searchFocused ? accent.opacity(0.65) : Color.white.opacity(0.22), lineWidth: 1)
-        )
-        .shadow(color: searchFocused ? accent.opacity(0.18) : Color.black.opacity(0.08), radius: 8, x: 0, y: 3)
-        .animation(.easeInOut(duration: 0.2), value: searchFocused)
-    }
-
-    private func actionGlassButton(systemName: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Image(systemName: systemName)
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(CoffeeTheme.textPrimary)
-                .frame(width: 38, height: 38)
-                .background(.ultraThinMaterial)
-                .clipShape(Circle())
-                .overlay(Circle().stroke(Color.white.opacity(0.26), lineWidth: 1))
-                .shadow(color: CoffeeTheme.shadow.opacity(0.45), radius: 6, x: 0, y: 3)
-        }
-        .buttonStyle(PressScaleStyle())
-    }
-
+    // MARK: - Channel Inset Grouped Section
     @ViewBuilder
-    private func sectionGroup(title: String, rooms: [CommunityRoom]) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
+    private func channelSection(title: String, rooms: [CommunityRoom], isJoinedSection: Bool = false) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
             Text(title)
-                .font(.caption.weight(.bold))
+                .font(.system(size: 12, weight: .bold))
                 .tracking(1)
-                .foregroundStyle(CoffeeTheme.textSecondary)
+                .foregroundStyle(CoffeeTheme.textTertiary)
+                .padding(.leading, 6)
 
             VStack(spacing: 0) {
                 if rooms.isEmpty {
-                    Text("No rooms found.")
-                        .font(.footnote)
-                        .foregroundStyle(CoffeeTheme.textSecondary)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.vertical, 14)
-                        .padding(.horizontal, 12)
+                    HStack {
+                        Text("No channels match your search.")
+                            .font(.subheadline)
+                            .foregroundStyle(CoffeeTheme.textSecondary)
+                        Spacer()
+                    }
+                    .padding(16)
                 } else {
                     ForEach(Array(rooms.enumerated()), id: \.element.id) { index, room in
                         NavigationLink(value: room) {
-                            roomRow(room, showJoinedBadge: joinedRoomIDs.contains(room.id))
+                            channelRow(room, isJoined: isJoinedSection)
                         }
-                        .buttonStyle(PressScaleStyle())
+                        .buttonStyle(PressableBounceButtonStyle())
 
-                        if index != rooms.count - 1 {
-                            Rectangle()
-                                .fill(
-                                    LinearGradient(
-                                        colors: [Color.clear, CoffeeTheme.border.opacity(0.7), Color.clear],
-                                        startPoint: .leading,
-                                        endPoint: .trailing
-                                    )
-                                )
-                                .frame(height: 1)
-                                .padding(.horizontal, 14)
+                        if index < rooms.count - 1 {
+                            Divider()
+                                .padding(.leading, 60)
                         }
                     }
                 }
             }
-            .padding(.vertical, 6)
-            .background(.ultraThinMaterial)
-            .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
+            .background(Color(uiColor: .secondarySystemGroupedBackground))
+            .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
             .overlay(
-                RoundedRectangle(cornerRadius: 28, style: .continuous)
-                    .stroke(Color.white.opacity(0.26), lineWidth: 1)
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .stroke(Color(uiColor: .separator).opacity(0.3), lineWidth: 0.5)
             )
-            .shadow(color: Color.black.opacity(0.1), radius: 10, x: 0, y: 5)
+            .shadow(color: Color.black.opacity(0.03), radius: 4, x: 0, y: 2)
         }
     }
 
-    @ViewBuilder
-    private func joinedSectionGroup(rooms: [CommunityRoom]) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            VStack(spacing: 8) {
-                ForEach(rooms) { room in
-                    NavigationLink(value: room) {
-                        roomRow(room, showJoinedBadge: true, showActivityDetails: false)
-                    }
-                    .buttonStyle(PressScaleStyle())
-                }
-            }
-            .padding(10)
-            .background(.ultraThinMaterial)
-            .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: 28, style: .continuous)
-                    .stroke(Color.white.opacity(0.26), lineWidth: 1)
-            )
-            .shadow(color: Color.black.opacity(0.1), radius: 10, x: 0, y: 5)
-        }
-    }
-
-    @ViewBuilder
-    private func activityWidget(for room: CommunityRoom) -> some View {
-        if room.unreadCount > 0 {
-            PulsingDot(accent: accent)
-        } else {
-            HStack(spacing: -6) {
-                ForEach(0..<min(3, max(1, room.activeNow / 4 + 1)), id: \.self) { idx in
-                    Circle()
-                        .fill(CoffeeTheme.card)
-                        .frame(width: 16, height: 16)
-                        .overlay(Circle().stroke(Color.white.opacity(0.4), lineWidth: 1))
-                        .overlay(
-                            Text(["AR", "MK", "LN"][idx % 3])
-                                .font(.system(size: 7, weight: .bold))
-                                .foregroundStyle(CoffeeTheme.textSecondary)
-                        )
-                }
-            }
-        }
-    }
-
-    private func roomRow(_ room: CommunityRoom, showJoinedBadge: Bool) -> some View {
-        roomRow(room, showJoinedBadge: showJoinedBadge, showActivityDetails: true)
-    }
-
-    private func roomRow(_ room: CommunityRoom, showJoinedBadge: Bool, showActivityDetails: Bool) -> some View {
-        HStack(spacing: 12) {
+    // MARK: - Channel Row
+    private func channelRow(_ room: CommunityRoom, isJoined: Bool) -> some View {
+        HStack(spacing: 14) {
+            // Icon Badge
             ZStack {
                 Circle()
-                    .fill(CoffeeTheme.cardAlt.opacity(0.9))
-                    .frame(width: 42, height: 42)
+                    .fill(CoffeeTheme.accentPrimary.opacity(0.12))
+                    .frame(width: 40, height: 40)
+
                 Image(systemName: room.icon)
-                    .font(.system(size: 18, weight: .semibold))
+                    .font(.system(size: 17, weight: .semibold))
                     .foregroundStyle(CoffeeTheme.accentPrimary)
             }
 
-            VStack(alignment: .leading, spacing: 4) {
+            // Info
+            VStack(alignment: .leading, spacing: 3) {
                 HStack(spacing: 6) {
                     Text(room.title)
-                        .font(.headline.weight(.bold))
+                        .font(.headline.weight(.semibold))
                         .foregroundStyle(CoffeeTheme.textPrimary)
                         .lineLimit(1)
 
-                    if showJoinedBadge {
-                        Text("Joined")
-                            .font(.caption2.weight(.semibold))
-                            .foregroundStyle(accent)
-                            .padding(.horizontal, 7)
-                            .padding(.vertical, 3)
-                            .background(CoffeeTheme.cardAlt)
+                    if isJoined {
+                        Text("JOINED")
+                            .font(.system(size: 9, weight: .bold))
+                            .foregroundStyle(CoffeeTheme.accentPrimary)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(CoffeeTheme.accentPrimary.opacity(0.12))
                             .clipShape(Capsule())
                     }
                 }
@@ -286,24 +166,35 @@ struct CommunityScreenView: View {
 
             Spacer(minLength: 8)
 
+            // Right side stats & unread indicator
             HStack(spacing: 8) {
-                if showActivityDetails {
-                    activityWidget(for: room)
-                    Text("\(room.activeNow)")
-                        .font(.caption2.weight(.semibold))
-                        .foregroundStyle(CoffeeTheme.textSecondary)
+                if room.unreadCount > 0 {
+                    Text("\(room.unreadCount)")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 7)
+                        .padding(.vertical, 3)
+                        .background(CoffeeTheme.accentPrimary)
+                        .clipShape(Capsule())
+                } else {
+                    HStack(spacing: 4) {
+                        Circle()
+                            .fill(Color.green)
+                            .frame(width: 6, height: 6)
+                        Text("\(room.activeNow)")
+                            .font(.caption2.weight(.medium))
+                            .foregroundStyle(CoffeeTheme.textTertiary)
+                    }
                 }
 
                 Image(systemName: "chevron.right")
-                    .font(.caption.weight(.bold))
-                    .foregroundStyle(CoffeeTheme.textSecondary)
-                    .frame(width: 24, height: 24)
-                    .background(.ultraThinMaterial)
-                    .clipShape(Circle())
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(CoffeeTheme.textTertiary.opacity(0.7))
             }
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 12)
+        .contentShape(Rectangle())
     }
 
     private func filterRooms(_ source: [CommunityRoom]) -> [CommunityRoom] {
@@ -320,12 +211,9 @@ struct CommunityScreenView: View {
         let title = request.name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !title.isEmpty else { return }
 
-        let messageText: String
-        if request.welcomeMessage.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            messageText = "Welcome to \(title). Share your rituals and keep it cozy."
-        } else {
-            messageText = request.welcomeMessage.trimmingCharacters(in: .whitespacesAndNewlines)
-        }
+        let messageText = request.welcomeMessage.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?
+            "Welcome to \(title). Share your rituals and brewing notes." :
+            request.welcomeMessage.trimmingCharacters(in: .whitespacesAndNewlines)
 
         let visibility = request.isPrivate ? "private" : "public"
         let details = request.details.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -364,12 +252,12 @@ struct CommunityScreenView: View {
         let official: [CommunityRoom] = [
             CommunityRoom(
                 id: UUID(),
-                title: "Daily Brew Chat",
-                description: "Your everyday coffee check-in.",
+                title: "Daily Extraction Chat",
+                description: "Your everyday morning coffee check-in and tweaks.",
                 icon: "cup.and.saucer.fill",
                 kind: .official,
-                activeNow: 12,
-                totalMembers: 248,
+                activeNow: 14,
+                totalMembers: 320,
                 unreadCount: 2,
                 messages: [
                     CommunityMessage(author: "@lina", text: "Morning brew done. Any V60 tweaks for cleaner sweetness?", ritualLink: nil, isCurrentUser: false),
@@ -378,12 +266,12 @@ struct CommunityScreenView: View {
             ),
             CommunityRoom(
                 id: UUID(),
-                title: "Origin Discussions",
-                description: "Beans, terroir, and processing notes.",
+                title: "Origin & Terroir",
+                description: "Geishas, anaerobic naturals, and farm discussions.",
                 icon: "globe.americas.fill",
                 kind: .official,
-                activeNow: 8,
-                totalMembers: 162,
+                activeNow: 9,
+                totalMembers: 180,
                 unreadCount: 0,
                 messages: [
                     CommunityMessage(author: "@eliza", text: "Ethiopian washed lots are so expressive this week.", ritualLink: nil, isCurrentUser: false)
@@ -391,25 +279,25 @@ struct CommunityScreenView: View {
             ),
             CommunityRoom(
                 id: UUID(),
-                title: "Technique & Tips",
-                description: "Dial in recipes together.",
+                title: "SCA Cupping & Sensory",
+                description: "Flavor wheel calibration, TDS, and refractometry.",
                 icon: "flask.fill",
                 kind: .official,
-                activeNow: 14,
-                totalMembers: 214,
+                activeNow: 12,
+                totalMembers: 210,
                 unreadCount: 1,
                 messages: [
-                    CommunityMessage(author: "@kai", text: "How long are you blooming for medium-light roast?", ritualLink: nil, isCurrentUser: false)
+                    CommunityMessage(author: "@kai", text: "How long are you blooming for light roast anaerobic?", ritualLink: nil, isCurrentUser: false)
                 ]
             ),
             CommunityRoom(
                 id: UUID(),
-                title: "Monthly Challenge",
-                description: "Submit rituals for this month’s contest.",
+                title: "Monthly Extraction Contest",
+                description: "Submit rituals for this month’s community showcase.",
                 icon: "trophy.fill",
                 kind: .official,
-                activeNow: 19,
-                totalMembers: 301,
+                activeNow: 22,
+                totalMembers: 340,
                 unreadCount: 4,
                 messages: [
                     CommunityMessage(author: "@mod", text: "Pinned: Submit your ritual for this month’s contest.", ritualLink: nil, isCurrentUser: false, isPinned: true),
@@ -422,25 +310,25 @@ struct CommunityScreenView: View {
             CommunityRoom(
                 id: UUID(),
                 title: "Late Night Pour Overs",
-                description: "Quiet room for evening brewers.",
+                description: "Quiet room for calm evening decaf & brew sessions.",
                 icon: "moon.stars.fill",
                 kind: .community,
-                activeNow: 6,
-                totalMembers: 87,
+                activeNow: 7,
+                totalMembers: 95,
                 unreadCount: 0,
                 messages: [
-                    CommunityMessage(author: "@noah", text: "Anyone brewing with lower temp tonight?", ritualLink: nil, isCurrentUser: false)
+                    CommunityMessage(author: "@noah", text: "Anyone brewing with 88°C water tonight?", ritualLink: nil, isCurrentUser: false)
                 ]
             ),
             CommunityRoom(
                 id: UUID(),
-                title: "Croissant Pairing Club",
-                description: "Coffee and flaky pastry pairing notes.",
+                title: "Artisanal Food Pairings",
+                description: "Coffee harmonies with canelés, sourdough & fruit.",
                 icon: "fork.knife",
                 kind: .community,
-                activeNow: 9,
-                totalMembers: 126,
-                unreadCount: 1,
+                activeNow: 11,
+                totalMembers: 142,
+                unreadCount: 0,
                 messages: [
                     CommunityMessage(author: "@you", text: "This combo is unreal.", ritualLink: RitualLink(ritualID: featured.id, title: featured.title), isCurrentUser: true)
                 ]
@@ -461,14 +349,6 @@ struct CommunityScreenView: View {
                 }
             }
         )
-    }
-}
-
-private struct CommunityScrollOffsetKey: PreferenceKey {
-    static var defaultValue: CGFloat = 0
-
-    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
-        value = nextValue()
     }
 }
 
@@ -519,28 +399,6 @@ private struct CommunityRoom: Identifiable, Codable, Hashable {
     let messages: [CommunityMessage]
 }
 
-private struct PulsingDot: View {
-    let accent: Color
-    @State private var pulse = false
-
-    var body: some View {
-        ZStack {
-            Circle()
-                .fill(accent.opacity(0.22))
-                .frame(width: 14, height: 14)
-                .scaleEffect(pulse ? 1.45 : 0.8)
-            Circle()
-                .fill(accent)
-                .frame(width: 7, height: 7)
-        }
-        .onAppear {
-            withAnimation(.easeInOut(duration: 1.1).repeatForever(autoreverses: true)) {
-                pulse = true
-            }
-        }
-    }
-}
-
 private struct RoomChatView: View {
     @Environment(\.dismiss) private var dismiss
 
@@ -551,12 +409,6 @@ private struct RoomChatView: View {
     @State private var draftMessage: String = ""
     @State private var isJoining: Bool = false
 
-    private let bgTop = CoffeeTheme.bgPrimary
-    private let bgBottom = CoffeeTheme.bgSecondary
-    private let textPrimary = CoffeeTheme.textPrimary
-    private let textSecondary = CoffeeTheme.textSecondary
-    private let accent = CoffeeTheme.accentPrimary
-
     init(room: CommunityRoom, isJoined: Binding<Bool>) {
         self.room = room
         _isJoined = isJoined
@@ -564,186 +416,200 @@ private struct RoomChatView: View {
     }
 
     var body: some View {
-        ScrollView(showsIndicators: false) {
-            VStack(alignment: .leading, spacing: 20) {
-                roomHeader
+        ScrollViewReader { proxy in
+            ScrollView(showsIndicators: false) {
+                VStack(alignment: .leading, spacing: 16) {
+                    // Room Info Header Card
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack {
+                            ZStack {
+                                Circle()
+                                    .fill(CoffeeTheme.accentPrimary.opacity(0.12))
+                                    .frame(width: 38, height: 38)
+                                Image(systemName: room.icon)
+                                    .font(.system(size: 16, weight: .semibold))
+                                    .foregroundStyle(CoffeeTheme.accentPrimary)
+                            }
 
-                if isJoined {
-                    LazyVStack(alignment: .leading, spacing: 10) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(room.title)
+                                    .font(.headline.weight(.bold))
+                                    .foregroundStyle(CoffeeTheme.textPrimary)
+                                Text("\(room.activeNow) Online • \(room.totalMembers) Members")
+                                    .font(.caption)
+                                    .foregroundStyle(CoffeeTheme.textTertiary)
+                            }
+                            Spacer()
+                        }
+
+                        Text(room.description)
+                            .font(.subheadline)
+                            .foregroundStyle(CoffeeTheme.textSecondary)
+                    }
+                    .padding(14)
+                    .background(Color(uiColor: .secondarySystemGroupedBackground))
+                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 16, style: .continuous)
+                            .stroke(Color(uiColor: .separator).opacity(0.3), lineWidth: 0.5)
+                    )
+
+                    // Messages Stream
+                    LazyVStack(spacing: 12) {
                         ForEach(messages) { message in
-                            messageRow(message)
+                            chatMessageBubble(message)
+                                .id(message.id)
                         }
                     }
-                } else {
-                    previewMessagesSection
+                }
+                .padding(.horizontal, 16)
+                .padding(.top, 12)
+                .padding(.bottom, 80)
+            }
+            .background(CoffeeTheme.bgPrimary.ignoresSafeArea())
+            .navigationTitle(room.title)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button(isJoined ? "Leave" : "Join") {
+                        let generator = UIImpactFeedbackGenerator(style: .medium)
+                        generator.impactOccurred()
+                        isJoined.toggle()
+                    }
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(isJoined ? Color.red : CoffeeTheme.accentPrimary)
                 }
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 12)
-            .padding(.bottom, isJoined ? 12 : 110)
-        }
-        .background(bgTop.ignoresSafeArea())
-        .navigationTitle(isJoined ? room.title : "Community Preview")
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar(.hidden, for: .tabBar)
-        .safeAreaInset(edge: .bottom) {
-            if isJoined {
-                composer
-            } else {
-                joinActionBar
+            .safeAreaInset(edge: .bottom) {
+                if isJoined {
+                    chatInputBar(proxy: proxy)
+                } else {
+                    joinBanner
+                }
             }
         }
     }
 
-    private var roomHeader: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(room.title)
-                .font(.title2.weight(.semibold))
-                .foregroundColor(textPrimary)
-            Text(room.description)
-                .font(.subheadline)
-                .foregroundColor(textSecondary)
-            Text("\(room.activeNow) Active • \(room.totalMembers) Members")
-                .font(.caption)
-                .foregroundColor(textSecondary)
-        }
-        .padding(12)
-        .coffeeCard(cornerRadius: 16)
-    }
+    private func chatMessageBubble(_ message: CommunityMessage) -> some View {
+        HStack {
+            if message.isCurrentUser { Spacer(minLength: 40) }
 
-    private var previewMessagesSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("Preview Messages")
-                .font(.title3.weight(.semibold))
-                .foregroundColor(textPrimary)
+            VStack(alignment: message.isCurrentUser ? .trailing : .leading, spacing: 4) {
+                if !message.isCurrentUser {
+                    Text(message.author)
+                        .font(.caption2.weight(.bold))
+                        .foregroundStyle(CoffeeTheme.textTertiary)
+                }
 
-            ForEach(Array(messages.prefix(3))) { message in
-                Text("\(message.author): \(message.text)")
+                Text(message.text)
                     .font(.subheadline)
-                    .foregroundColor(textSecondary)
-                    .padding(10)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(CoffeeTheme.card)
-                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .foregroundStyle(message.isCurrentUser ? Color.white : CoffeeTheme.textPrimary)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 10)
+                    .background(
+                        message.isCurrentUser ?
+                            CoffeeTheme.accentPrimary :
+                            Color(uiColor: .secondarySystemGroupedBackground)
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 16, style: .continuous)
+                            .stroke(
+                                message.isCurrentUser ? Color.clear : Color(uiColor: .separator).opacity(0.3),
+                                lineWidth: 0.5
+                            )
+                    )
+
+                if let link = message.ritualLink {
+                    HStack(spacing: 6) {
+                        Image(systemName: "link")
+                            .font(.system(size: 10, weight: .bold))
+                        Text(link.title)
+                            .font(.caption2.weight(.bold))
+                    }
+                    .foregroundStyle(CoffeeTheme.accentPrimary)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 4)
+                    .background(Color(uiColor: .tertiarySystemGroupedBackground))
+                    .clipShape(Capsule())
+                }
             }
+
+            if !message.isCurrentUser { Spacer(minLength: 40) }
         }
     }
 
-    private var joinActionBar: some View {
+    private func chatInputBar(proxy: ScrollViewProxy) -> some View {
         HStack(spacing: 10) {
-            Button("Cancel") {
-                dismiss()
-            }
-            .font(.headline.weight(.semibold))
-            .foregroundColor(textPrimary)
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 14)
-            .overlay(
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .stroke(CoffeeTheme.accentSecondary.opacity(0.75), lineWidth: 0.9)
-            )
-
-            Button(isJoining ? "Joined" : "Join Community") {
-                joinRoom()
-            }
-            .font(.headline.weight(.semibold))
-            .foregroundColor(.white)
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 14)
-            .background(accent)
-            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-            .disabled(isJoining)
-        }
-        .buttonStyle(PressScaleStyle())
-        .padding(.horizontal, 20)
-        .padding(.top, 10)
-        .padding(.bottom, 10)
-        .background(bgBottom)
-    }
-
-    private func joinRoom() {
-        let feedback = UIImpactFeedbackGenerator(style: .light)
-        feedback.impactOccurred()
-        withAnimation(.easeInOut(duration: 0.18)) {
-            isJoining = true
-        }
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-            withAnimation(.spring(response: 0.32, dampingFraction: 0.86)) {
-                isJoined = true
-                isJoining = false
-            }
-        }
-    }
-
-    private func messageRow(_ message: CommunityMessage) -> some View {
-        VStack(alignment: message.isCurrentUser ? .trailing : .leading, spacing: 4) {
-            Text(message.isPinned ? "PINNED • \(message.author)" : message.author)
-                .font(.caption2.weight(.bold))
-                .foregroundColor(textSecondary)
-
-            Text(message.text)
-                .font(.body)
-                .foregroundColor(textPrimary)
-                .padding(10)
-                .background(message.isCurrentUser ? accent.opacity(0.20) : CoffeeTheme.card)
-                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .stroke(CoffeeTheme.border, lineWidth: 1)
-                )
-        }
-        .frame(maxWidth: .infinity, alignment: message.isCurrentUser ? .trailing : .leading)
-    }
-
-    private var composer: some View {
-        let hasMessage = !draftMessage.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-
-        return HStack(spacing: 10) {
-            TextField("Write a message", text: $draftMessage)
-                .textInputAutocapitalization(.sentences)
-                .foregroundColor(textPrimary)
-                .tint(accent)
-                .padding(.horizontal, 12)
+            TextField("Message \(room.title)...", text: $draftMessage)
+                .font(.subheadline)
+                .padding(.horizontal, 14)
                 .padding(.vertical, 10)
-                .background(CoffeeTheme.card)
-                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .background(Color(uiColor: .secondarySystemGroupedBackground))
+                .clipShape(Capsule())
+                .overlay(
+                    Capsule()
+                        .stroke(Color(uiColor: .separator).opacity(0.4), lineWidth: 0.5)
+                )
 
             Button {
-                sendMessage()
+                let trimmed = draftMessage.trimmingCharacters(in: .whitespacesAndNewlines)
+                guard !trimmed.isEmpty else { return }
+                let newMsg = CommunityMessage(
+                    author: "@you",
+                    text: trimmed,
+                    ritualLink: nil,
+                    isCurrentUser: true
+                )
+                messages.append(newMsg)
+                draftMessage = ""
+                withAnimation {
+                    proxy.scrollTo(newMsg.id, anchor: .bottom)
+                }
             } label: {
-                Image(systemName: "paperplane.fill")
-                    .font(.headline.weight(.bold))
-                    .foregroundColor(.white)
-                    .frame(width: 48, height: 48)
-                    .background(hasMessage ? accent : textSecondary.opacity(0.45))
-                    .clipShape(Circle())
+                Image(systemName: "arrow.up.circle.fill")
+                    .font(.system(size: 32))
+                    .foregroundStyle(
+                        draftMessage.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?
+                            CoffeeTheme.textTertiary.opacity(0.4) :
+                            CoffeeTheme.accentPrimary
+                    )
             }
-            .buttonStyle(.plain)
-            .disabled(!hasMessage)
+            .disabled(draftMessage.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
         }
-        .padding(.horizontal, 12)
-        .padding(.top, 10)
-        .padding(.bottom, 10)
-        .background(CoffeeTheme.bgSecondary)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 8)
+        .background(.ultraThinMaterial)
     }
 
-    private func sendMessage() {
-        let trimmed = draftMessage.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return }
+    private var joinBanner: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Join to Participate")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(CoffeeTheme.textPrimary)
+                Text("Chat and share extractions with members")
+                    .font(.caption)
+                    .foregroundStyle(CoffeeTheme.textSecondary)
+            }
 
-        messages.append(
-            CommunityMessage(author: "@you", text: trimmed, ritualLink: nil, isCurrentUser: true)
-        )
-        draftMessage = ""
-    }
-}
+            Spacer()
 
-private struct PressScaleStyle: ButtonStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .scaleEffect(configuration.isPressed ? 0.97 : 1.0)
-            .animation(.easeInOut(duration: 0.12), value: configuration.isPressed)
+            Button("Join Channel") {
+                let generator = UIImpactFeedbackGenerator(style: .medium)
+                generator.impactOccurred()
+                isJoined = true
+            }
+            .font(.subheadline.weight(.bold))
+            .foregroundStyle(.white)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 10)
+            .background(CoffeeTheme.accentPrimary)
+            .clipShape(Capsule())
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 12)
+        .background(.ultraThinMaterial)
     }
 }
 
@@ -776,153 +642,99 @@ private struct CreateCommunityRoomView: View {
 
     let onCreate: (NewCommunityRoomRequest) -> Void
 
-    private let textPrimary = CoffeeTheme.textPrimary
-    private let textSecondary = CoffeeTheme.textSecondary
-    private let accent = CoffeeTheme.accentPrimary
-    private let icons = ["cup.and.saucer.fill", "globe.americas.fill", "flask.fill", "fork.knife", "moon.stars.fill", "trophy.fill", "flame.fill", "sparkles"]
+    private let icons = [
+        "cup.and.saucer.fill",
+        "globe.americas.fill",
+        "flask.fill",
+        "fork.knife",
+        "moon.stars.fill",
+        "trophy.fill",
+        "flame.fill",
+        "sparkles"
+    ]
 
     private var canCreate: Bool {
         !roomName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
     var body: some View {
-        ScrollView(showsIndicators: false) {
-            VStack(alignment: .leading, spacing: 14) {
-                Text("Create Community")
-                    .font(.system(size: 28, weight: .semibold, design: .rounded))
-                    .foregroundStyle(textPrimary)
+        NavigationStack {
+            Form {
+                Section("Channel Details") {
+                    TextField("Channel Name", text: $roomName)
+                    TextField("Description", text: $roomDescription, axis: .vertical)
+                        .lineLimit(2...4)
+                }
 
-                communityGlassCard {
-                    labeledField("Room Name", text: $roomName, placeholder: "e.g. Morning Espresso Club")
-                    labeledField("Room Details", text: $roomDescription, placeholder: "Short room description", axis: .vertical)
-
-                    Text("Room Icon")
-                        .font(.subheadline)
-                        .foregroundStyle(textSecondary)
-
+                Section("Icon") {
                     ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 8) {
+                        HStack(spacing: 12) {
                             ForEach(icons, id: \.self) { icon in
                                 Button {
                                     selectedIcon = icon
                                 } label: {
-                                    Image(systemName: icon)
-                                        .font(.system(size: 18, weight: .semibold))
-                                        .foregroundStyle(selectedIcon == icon ? accent : CoffeeTheme.textSecondary)
-                                        .frame(width: 44, height: 44)
-                                        .background(selectedIcon == icon ? accent.opacity(0.20) : CoffeeTheme.bgSecondary)
-                                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                                        .overlay(
-                                            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                                .stroke(selectedIcon == icon ? accent : CoffeeTheme.border, lineWidth: 1)
-                                        )
-                                }
-                            }
-                        }
-                    }
-
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("Topic")
-                            .font(.subheadline)
-                            .foregroundStyle(textSecondary)
-
-                        ScrollView(.horizontal, showsIndicators: false) {
-                            HStack(spacing: 8) {
-                                ForEach(CommunityRoomTopic.allCases, id: \.self) { topic in
-                                    Button {
-                                        withAnimation(.easeInOut(duration: 0.16)) {
-                                            selectedTopic = topic
-                                        }
-                                    } label: {
-                                        Text(topic.rawValue)
-                                            .font(.subheadline.weight(.semibold))
-                                            .foregroundStyle(selectedTopic == topic ? Color.white : textPrimary)
-                                            .padding(.horizontal, 14)
-                                            .padding(.vertical, 9)
-                                            .background(
-                                                Capsule()
-                                                    .fill(selectedTopic == topic ? accent : CoffeeTheme.card)
+                                    ZStack {
+                                        Circle()
+                                            .fill(
+                                                selectedIcon == icon ?
+                                                    CoffeeTheme.accentPrimary :
+                                                    Color(uiColor: .tertiarySystemGroupedBackground)
                                             )
-                                            .overlay(
-                                                Capsule()
-                                                    .stroke(selectedTopic == topic ? accent.opacity(0.25) : CoffeeTheme.border, lineWidth: 1)
-                                            )
+                                            .frame(width: 44, height: 44)
+                                        Image(systemName: icon)
+                                            .font(.system(size: 18, weight: .semibold))
+                                            .foregroundStyle(selectedIcon == icon ? Color.white : CoffeeTheme.textPrimary)
                                     }
-                                    .buttonStyle(.plain)
                                 }
+                                .buttonStyle(PlainButtonStyle())
                             }
-                            .padding(.vertical, 2)
+                        }
+                        .padding(.vertical, 4)
+                    }
+                }
+
+                Section("Topic") {
+                    Picker("Topic", selection: $selectedTopic) {
+                        ForEach(CommunityRoomTopic.allCases, id: \.self) { topic in
+                            Text(topic.rawValue).tag(topic)
                         }
                     }
+                    .pickerStyle(.menu)
 
-                    Toggle("Private Room", isOn: $isPrivate)
-                        .tint(accent)
-                        .foregroundStyle(textPrimary)
-
-                    labeledField("Welcome Message", text: $welcomeMessage, placeholder: "Optional pinned welcome", axis: .vertical)
+                    Toggle("Private Channel", isOn: $isPrivate)
                 }
 
-                Button {
-                    onCreate(
-                        NewCommunityRoomRequest(
-                            name: roomName,
-                            details: roomDescription,
-                            icon: selectedIcon,
-                            topic: selectedTopic,
-                            isPrivate: isPrivate,
-                            welcomeMessage: welcomeMessage
-                        )
-                    )
-                    dismiss()
-                } label: {
-                    Text("Create Room")
-                        .font(.headline.weight(.semibold))
-                        .foregroundStyle(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 14)
-                        .background(canCreate ? accent : textSecondary.opacity(0.5))
-                        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                Section("Welcome Message") {
+                    TextField("Optional pinned welcome", text: $welcomeMessage, axis: .vertical)
+                        .lineLimit(2...4)
                 }
-                .buttonStyle(.plain)
-                .disabled(!canCreate)
             }
-            .padding(16)
+            .navigationTitle("New Channel")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("Cancel") { dismiss() }
+                }
+
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Create") {
+                        onCreate(
+                            NewCommunityRoomRequest(
+                                name: roomName,
+                                details: roomDescription,
+                                icon: selectedIcon,
+                                topic: selectedTopic,
+                                isPrivate: isPrivate,
+                                welcomeMessage: welcomeMessage
+                            )
+                        )
+                        dismiss()
+                    }
+                    .font(.headline.weight(.bold))
+                    .disabled(!canCreate)
+                }
+            }
         }
-        .background(LinearGradient(colors: [CoffeeTheme.bgPrimary, CoffeeTheme.bgSecondary], startPoint: .topLeading, endPoint: .bottomTrailing).ignoresSafeArea())
-        .navigationTitle("New Room")
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar(.hidden, for: .tabBar)
-    }
-
-    private func labeledField(_ title: String, text: Binding<String>, placeholder: String, axis: Axis = .horizontal) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(title)
-                .font(.subheadline)
-                .foregroundStyle(textSecondary)
-
-            TextField(placeholder, text: text, axis: axis)
-                .lineLimit(axis == .vertical ? 3...5 : 1...1)
-                .padding(.horizontal, 10)
-                .padding(.vertical, 10)
-                .background(CoffeeTheme.card)
-                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .stroke(CoffeeTheme.border, lineWidth: 1)
-                )
-        }
-    }
-
-    private func communityGlassCard<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
-        VStack(alignment: .leading, spacing: 12, content: content)
-            .padding(14)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(CoffeeTheme.cardAlt)
-            .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .stroke(CoffeeTheme.border, lineWidth: 1)
-            )
     }
 }
 

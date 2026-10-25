@@ -17,12 +17,6 @@ struct ProfileScreenView: View {
     @State private var showBeanCellar = false
     @State private var showSignOutConfirm = false
 
-    private let bgTop = CoffeeTheme.bgPrimary
-    private let bgBottom = CoffeeTheme.bgSecondary
-    private let textPrimary = CoffeeTheme.textPrimary
-    private let textSecondary = CoffeeTheme.textSecondary
-    private let accent = CoffeeTheme.accentPrimary
-
     private var profile: ProfileData { store.profile }
 
     private var allKnownRituals: [BrewRitual] {
@@ -45,17 +39,6 @@ struct ProfileScreenView: View {
             || draft.method != nil
     }
 
-    private var signatureRitualName: String {
-        myRitualPosts.first?.ritual.title ?? profile.brewHistory.first?.ritualTitle ?? store.featuredRitual.title
-    }
-
-    private var joinDateText: String {
-        let firstDate = profile.brewHistory.map(\.brewedAt).min() ?? Date()
-        let formatter = DateFormatter()
-        formatter.dateFormat = "MMM yyyy"
-        return formatter.string(from: firstDate)
-    }
-
     private var savedPairings: [BrewRitual] {
         profile.savedRituals
             .filter { $0.pairing != nil }
@@ -69,28 +52,81 @@ struct ProfileScreenView: View {
     var body: some View {
         NavigationStack {
             ScrollView(showsIndicators: false) {
-                VStack(alignment: .leading, spacing: 18) {
-                    topArea
-                    headerSection
-                    profileContentSection
-                    signOutSection
+                VStack(alignment: .leading, spacing: 20) {
+                    // Apple ID Style Profile Header Card
+                    profileSummaryCard
+
+                    // Quick Metrics Strip
+                    metricsStrip
+
+                    // Segmented Filter Control
+                    Picker("Profile Section", selection: $contentTab) {
+                        ForEach(ProfileContentTab.allCases, id: \.self) { tab in
+                            Text(tab.title).tag(tab)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    .padding(.vertical, 4)
+
+                    // Tab Content List
+                    tabContentSection
+
+                    // Account Actions
+                    accountActionsSection
                 }
-                .padding(.horizontal, 16)
-                .padding(.top, 10)
-                .padding(.bottom, 24)
+                .padding(.horizontal, 20)
+                .padding(.top, 8)
+                .padding(.bottom, 64)
             }
-            .background(background.ignoresSafeArea())
-            .navigationBarHidden(true)
+            .background(CoffeeTheme.bgPrimary.ignoresSafeArea())
+            .navigationTitle("Profile")
+            .navigationBarTitleDisplayMode(.large)
+            .toolbar {
+                ToolbarItemGroup(placement: .topBarTrailing) {
+                    // Insights
+                    Button {
+                        let generator = UIImpactFeedbackGenerator(style: .light)
+                        generator.impactOccurred()
+                        showInsights = true
+                    } label: {
+                        Image(systemName: "chart.line.uptrend.xyaxis")
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundStyle(CoffeeTheme.accentPrimary)
+                    }
+                    .accessibilityLabel("Sensory insights")
+
+                    // Bean Cellar
+                    Button {
+                        let generator = UIImpactFeedbackGenerator(style: .light)
+                        generator.impactOccurred()
+                        showBeanCellar = true
+                    } label: {
+                        Image(systemName: "shippingbox.fill")
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundStyle(CoffeeTheme.accentPrimary)
+                    }
+                    .accessibilityLabel("Bean cellar inventory")
+
+                    // Edit
+                    Button {
+                        showEditProfile = true
+                    } label: {
+                        Image(systemName: "pencil")
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundStyle(CoffeeTheme.accentPrimary)
+                    }
+                    .accessibilityLabel("Edit profile")
+                }
+            }
             .sheet(isPresented: $showComposer) {
                 CreateRecipeFlowView()
                     .presentationDetents([.large])
-                    .presentationCornerRadius(34)
-                    .presentationDragIndicator(.hidden)
+                    .presentationCornerRadius(32)
             }
             .sheet(isPresented: $showEditProfile) {
                 EditProfileView()
                     .presentationDetents([.large])
-                    .presentationCornerRadius(34)
+                    .presentationCornerRadius(32)
             }
             .sheet(isPresented: $showInsights) {
                 InsightsScreenView()
@@ -98,7 +134,7 @@ struct ProfileScreenView: View {
             .sheet(isPresented: $showBeanCellar) {
                 BeanCellarScreenView()
             }
-            .confirmationDialog("Sign out?", isPresented: $showSignOutConfirm, titleVisibility: .visible) {
+            .confirmationDialog("Sign out of Beans & Bites?", isPresented: $showSignOutConfirm, titleVisibility: .visible) {
                 Button("Sign Out", role: .destructive) {
                     auth.signOut()
                 }
@@ -107,92 +143,413 @@ struct ProfileScreenView: View {
         }
     }
 
-    private var background: some View {
-        LinearGradient(colors: [bgTop, bgBottom], startPoint: .topLeading, endPoint: .bottomTrailing)
+    // MARK: - Profile Summary Card
+    private var profileSummaryCard: some View {
+        HStack(spacing: 16) {
+            avatarView(size: 72)
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(profile.user.displayName)
+                    .font(.title3.weight(.bold))
+                    .foregroundStyle(CoffeeTheme.textPrimary)
+
+                Text(profile.user.username)
+                    .font(.subheadline)
+                    .foregroundStyle(CoffeeTheme.accentPrimary)
+
+                HStack(spacing: 6) {
+                    Image(systemName: "rosette")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundStyle(CoffeeTheme.accentWarmGold)
+                    Text("Level 4 Craft Barista")
+                        .font(.caption2.weight(.bold))
+                        .foregroundStyle(CoffeeTheme.textSecondary)
+                }
+                .padding(.top, 2)
+            }
+
+            Spacer()
+        }
+        .padding(16)
+        .background(Color(uiColor: .secondarySystemGroupedBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .stroke(Color(uiColor: .separator).opacity(0.3), lineWidth: 0.5)
+        )
+        .shadow(color: Color.black.opacity(0.03), radius: 4, x: 0, y: 2)
     }
 
-    private var topArea: some View {
-        HStack {
-            Text("Profile")
-                .font(.system(size: 32, weight: .semibold, design: .rounded))
-                .foregroundStyle(textPrimary)
+    // MARK: - Metrics Strip
+    private var metricsStrip: some View {
+        HStack(spacing: 12) {
+            metricItem(title: "Brews", value: "\(profile.brewHistory.count)", icon: "cup.and.saucer.fill")
+            metricItem(title: "Saved", value: "\(profile.savedRituals.count)", icon: "heart.fill")
+            metricItem(title: "Published", value: "\(myRitualPosts.count)", icon: "sparkles")
+        }
+    }
+
+    private func metricItem(title: String, value: String, icon: String) -> some View {
+        VStack(spacing: 4) {
+            HStack(spacing: 4) {
+                Image(systemName: icon)
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundStyle(CoffeeTheme.accentPrimary)
+                Text(value)
+                    .font(.headline.weight(.bold))
+                    .foregroundStyle(CoffeeTheme.textPrimary)
+            }
+            Text(title)
+                .font(.caption2.weight(.medium))
+                .foregroundStyle(CoffeeTheme.textTertiary)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 12)
+        .background(Color(uiColor: .secondarySystemGroupedBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .stroke(Color(uiColor: .separator).opacity(0.3), lineWidth: 0.5)
+        )
+    }
+
+    // MARK: - Tab Content Section
+    @ViewBuilder
+    private var tabContentSection: some View {
+        switch contentTab {
+        case .publishedRecipes:
+            if myRitualPosts.isEmpty {
+                emptyPlaceholder(
+                    icon: "cup.and.saucer",
+                    title: "No Published Recipes",
+                    message: "Craft your own recipe with custom ratios and share it.",
+                    ctaTitle: "Create Recipe"
+                ) {
+                    showComposer = true
+                }
+            } else {
+                VStack(spacing: 12) {
+                    ForEach(myRitualPosts) { post in
+                        NavigationLink(destination: BrewDetailView(ritualID: post.ritual.id)) {
+                            publishedRecipeCard(post)
+                        }
+                        .buttonStyle(PressableBounceButtonStyle())
+                    }
+                }
+            }
+
+        case .savedPairings:
+            if savedPairings.isEmpty {
+                emptyPlaceholder(
+                    icon: "heart",
+                    title: "No Saved Recipes",
+                    message: "Tap the heart on any recipe or tasting pairing to save it here."
+                )
+            } else {
+                VStack(spacing: 12) {
+                    ForEach(savedPairings) { ritual in
+                        NavigationLink(destination: BrewDetailView(ritualID: ritual.id)) {
+                            savedRitualCard(ritual)
+                        }
+                        .buttonStyle(PressableBounceButtonStyle())
+                    }
+                }
+            }
+
+        case .history:
+            if recentHistory.isEmpty {
+                emptyPlaceholder(
+                    icon: "clock.arrow.circlepath",
+                    title: "No Brews Logged Yet",
+                    message: "Complete a guided brew session to track your extraction history."
+                )
+            } else {
+                VStack(spacing: 10) {
+                    ForEach(recentHistory) { log in
+                        historyCard(log)
+                    }
+                }
+            }
+
+        case .drafts:
+            if hasDraft {
+                draftCard
+            } else {
+                emptyPlaceholder(
+                    icon: "pencil.and.list.clipboard",
+                    title: "No Active Drafts",
+                    message: "In-progress recipes are saved here automatically.",
+                    ctaTitle: "Start New Recipe"
+                ) {
+                    showComposer = true
+                }
+            }
+        }
+    }
+
+    // MARK: - Inset Grouped Cards
+    private func publishedRecipeCard(_ post: CommunityPost) -> some View {
+        HStack(spacing: 14) {
+            Image(post.ritual.imageName)
+                .resizable()
+                .scaledToFill()
+                .frame(width: 70, height: 70)
+                .clipped()
+                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(post.ritual.title)
+                    .font(.subheadline.weight(.bold))
+                    .foregroundStyle(CoffeeTheme.textPrimary)
+                    .lineLimit(1)
+
+                Text(post.ritual.subtitle)
+                    .font(.caption)
+                    .foregroundStyle(CoffeeTheme.textSecondary)
+                    .lineLimit(1)
+
+                HStack(spacing: 10) {
+                    Label("\(post.likesCount)", systemImage: "heart.fill")
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(CoffeeTheme.accentPrimary)
+
+                    Text("•")
+                        .font(.caption2)
+                        .foregroundStyle(CoffeeTheme.textTertiary)
+
+                    Text(timeAgo(post.createdAt))
+                        .font(.caption2)
+                        .foregroundStyle(CoffeeTheme.textTertiary)
+                }
+            }
 
             Spacer()
 
-            HStack(spacing: 10) {
-                Button {
-                    let generator = UIImpactFeedbackGenerator(style: .medium)
-                    generator.impactOccurred()
-                    showInsights = true
-                } label: {
-                    Image(systemName: "chart.line.uptrend.xyaxis")
-                        .font(.subheadline.weight(.bold))
-                        .foregroundStyle(accent)
-                        .frame(width: 40, height: 40)
-                        .background(CoffeeTheme.card)
-                        .clipShape(Circle())
-                        .overlay(Circle().stroke(CoffeeTheme.border, lineWidth: 1))
-                }
-                .buttonStyle(.plain)
-
-                Button {
-                    let generator = UIImpactFeedbackGenerator(style: .medium)
-                    generator.impactOccurred()
-                    showBeanCellar = true
-                } label: {
-                    Image(systemName: "shippingbox.fill")
-                        .font(.subheadline.weight(.bold))
-                        .foregroundStyle(accent)
-                        .frame(width: 40, height: 40)
-                        .background(CoffeeTheme.card)
-                        .clipShape(Circle())
-                        .overlay(Circle().stroke(CoffeeTheme.border, lineWidth: 1))
-                }
-                .buttonStyle(.plain)
-
-                Button {
-                    showEditProfile = true
-                } label: {
-                    Image(systemName: "square.and.pencil")
-                        .font(.subheadline.weight(.bold))
-                        .foregroundStyle(textPrimary)
-                        .frame(width: 40, height: 40)
-                        .background(CoffeeTheme.card)
-                        .clipShape(Circle())
-                        .overlay(Circle().stroke(CoffeeTheme.border, lineWidth: 1))
-                }
-                .buttonStyle(.plain)
-            }
+            Image(systemName: "chevron.right")
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(CoffeeTheme.textTertiary.opacity(0.7))
         }
+        .padding(12)
+        .background(Color(uiColor: .secondarySystemGroupedBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .stroke(Color(uiColor: .separator).opacity(0.3), lineWidth: 0.5)
+        )
     }
 
-    private var headerSection: some View {
-        VStack(spacing: 12) {
-            avatarView(size: 108)
+    private func savedRitualCard(_ ritual: BrewRitual) -> some View {
+        HStack(spacing: 14) {
+            Image(ritual.imageName)
+                .resizable()
+                .scaledToFill()
+                .frame(width: 70, height: 70)
+                .clipped()
+                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
 
-            VStack(spacing: 2) {
-                Text(profile.user.displayName)
-                    .font(.system(size: 30, weight: .semibold, design: .rounded))
-                    .foregroundColor(textPrimary)
-                    .multilineTextAlignment(.center)
+            VStack(alignment: .leading, spacing: 4) {
+                Text(ritual.title)
+                    .font(.subheadline.weight(.bold))
+                    .foregroundStyle(CoffeeTheme.textPrimary)
+                    .lineLimit(1)
 
-                Text(profile.user.username)
-                    .font(.title3.weight(.medium))
-                    .foregroundColor(accent)
+                Text("\(ritual.method.rawValue.capitalized) • \(ritual.bean.origin)")
+                    .font(.caption)
+                    .foregroundStyle(CoffeeTheme.textSecondary)
+                    .lineLimit(1)
+
+                if let pairing = ritual.pairing {
+                    Text("Paired with \(pairing.name)")
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(CoffeeTheme.accentWarmGold)
+                        .lineLimit(1)
+                }
+            }
+
+            Spacer()
+
+            Button {
+                let generator = UIImpactFeedbackGenerator(style: .light)
+                generator.impactOccurred()
+                store.toggleSave(ritualID: ritual.id)
+            } label: {
+                Image(systemName: "heart.fill")
+                    .font(.system(size: 16))
+                    .foregroundStyle(Color.red)
+            }
+            .buttonStyle(PlainButtonStyle())
+        }
+        .padding(12)
+        .background(Color(uiColor: .secondarySystemGroupedBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .stroke(Color(uiColor: .separator).opacity(0.3), lineWidth: 0.5)
+        )
+    }
+
+    private func historyCard(_ log: BrewLog) -> some View {
+        HStack(spacing: 12) {
+            ZStack {
+                Circle()
+                    .fill(CoffeeTheme.accentPrimary.opacity(0.12))
+                    .frame(width: 40, height: 40)
+                Image(systemName: "cup.and.saucer.fill")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(CoffeeTheme.accentPrimary)
+            }
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(log.ritualTitle)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(CoffeeTheme.textPrimary)
+                    .lineLimit(1)
+
+                Text(historyDate(log.brewedAt))
+                    .font(.caption2)
+                    .foregroundStyle(CoffeeTheme.textTertiary)
+            }
+
+            Spacer()
+
+            if let ritual = ritualFromLog(log) {
+                NavigationLink(destination: BrewDetailView(ritualID: ritual.id)) {
+                    Text("Rebrew")
+                        .font(.caption2.weight(.bold))
+                        .foregroundStyle(CoffeeTheme.accentPrimary)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 5)
+                        .background(CoffeeTheme.accentPrimary.opacity(0.12))
+                        .clipShape(Capsule())
+                }
+                .buttonStyle(PressableBounceButtonStyle())
+            }
+        }
+        .padding(12)
+        .background(Color(uiColor: .secondarySystemGroupedBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .stroke(Color(uiColor: .separator).opacity(0.3), lineWidth: 0.5)
+        )
+    }
+
+    private var draftCard: some View {
+        HStack(spacing: 12) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("DRAFT IN PROGRESS")
+                    .font(.system(size: 10, weight: .bold))
+                    .tracking(1)
+                    .foregroundStyle(CoffeeTheme.accentPrimary)
+
+                Text(store.communityDraft.coffeeOriginOrBlend.isEmpty ? "Untitled Ritual" : store.communityDraft.coffeeOriginOrBlend)
+                    .font(.subheadline.weight(.bold))
+                    .foregroundStyle(CoffeeTheme.textPrimary)
+
+                Text("Tap to resume editing before publishing")
+                    .font(.caption2)
+                    .foregroundStyle(CoffeeTheme.textSecondary)
+            }
+
+            Spacer()
+
+            Image(systemName: "pencil.circle.fill")
+                .font(.system(size: 24))
+                .foregroundStyle(CoffeeTheme.accentPrimary)
+        }
+        .padding(14)
+        .background(Color(uiColor: .secondarySystemGroupedBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .stroke(CoffeeTheme.accentPrimary.opacity(0.4), lineWidth: 1)
+        )
+        .onTapGesture { showComposer = true }
+    }
+
+    private func emptyPlaceholder(
+        icon: String,
+        title: String,
+        message: String,
+        ctaTitle: String? = nil,
+        ctaAction: (() -> Void)? = nil
+    ) -> some View {
+        VStack(spacing: 10) {
+            Image(systemName: icon)
+                .font(.system(size: 34))
+                .foregroundStyle(CoffeeTheme.textTertiary)
+                .padding(.top, 4)
+
+            Text(title)
+                .font(.headline)
+                .foregroundStyle(CoffeeTheme.textPrimary)
+
+            Text(message)
+                .font(.subheadline)
+                .foregroundStyle(CoffeeTheme.textSecondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 20)
+
+            if let ctaTitle, let ctaAction {
+                Button(action: ctaAction) {
+                    Text(ctaTitle)
+                        .font(.subheadline.weight(.bold))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 18)
+                        .padding(.vertical, 9)
+                        .background(CoffeeTheme.accentPrimary)
+                        .clipShape(Capsule())
+                }
+                .buttonStyle(PressableBounceButtonStyle())
+                .padding(.top, 6)
             }
         }
         .frame(maxWidth: .infinity)
+        .padding(.vertical, 32)
+        .background(Color(uiColor: .secondarySystemGroupedBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(Color(uiColor: .separator).opacity(0.3), lineWidth: 0.5)
+        )
+    }
+
+    // MARK: - Account Actions Section
+    private var accountActionsSection: some View {
+        VStack(spacing: 0) {
+            Button {
+                showSignOutConfirm = true
+            } label: {
+                HStack {
+                    Image(systemName: "rectangle.portrait.and.arrow.right")
+                        .font(.system(size: 15, weight: .semibold))
+                    Text("Sign Out")
+                        .font(.subheadline.weight(.semibold))
+                    Spacer()
+                }
+                .foregroundStyle(Color.red)
+                .padding(14)
+            }
+            .buttonStyle(PressableBounceButtonStyle())
+        }
+        .background(Color(uiColor: .secondarySystemGroupedBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .stroke(Color(uiColor: .separator).opacity(0.3), lineWidth: 0.5)
+        )
+        .padding(.top, 10)
     }
 
     @ViewBuilder
     private func avatarView(size: CGFloat) -> some View {
         let image = loadAvatarImage(named: profile.user.avatarName)
         Circle()
-            .fill(CoffeeTheme.card)
+            .fill(Color(uiColor: .tertiarySystemGroupedBackground))
             .frame(width: size, height: size)
             .overlay(
                 Circle()
-                    .stroke(accent.opacity(0.6), lineWidth: 2)
+                    .stroke(CoffeeTheme.accentPrimary.opacity(0.35), lineWidth: 1.5)
             )
             .overlay {
                 if let image {
@@ -202,347 +559,18 @@ struct ProfileScreenView: View {
                         .clipShape(Circle())
                 } else {
                     Image(systemName: "person.crop.circle.fill")
-                        .font(.system(size: size * 0.52))
-                        .foregroundColor(textPrimary.opacity(0.95))
+                        .font(.system(size: size * 0.55))
+                        .foregroundStyle(CoffeeTheme.accentPrimary)
                 }
             }
             .clipShape(Circle())
     }
 
-    private func statPill(_ text: String, icon: String) -> some View {
-        HStack(spacing: 6) {
-            Image(systemName: icon)
-                .font(.caption)
-            Text(text)
-                .font(.caption.weight(.semibold))
-                .lineLimit(1)
+    private func ritualFromLog(_ log: BrewLog) -> BrewRitual? {
+        if let ritualID = log.ritualID {
+            return allKnownRituals.first(where: { $0.id == ritualID })
         }
-        .foregroundColor(textPrimary.opacity(0.85))
-        .padding(.horizontal, 10)
-        .padding(.vertical, 8)
-        .background(CoffeeTheme.bgSecondary)
-        .clipShape(Capsule())
-        .overlay(Capsule().stroke(CoffeeTheme.border, lineWidth: 1))
-    }
-
-    private var signatureSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            sectionTitle("Signature Ritual")
-
-            HStack(spacing: 12) {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text(signatureRitualName)
-                        .font(.system(size: 21, weight: .semibold, design: .rounded))
-                        .foregroundColor(textPrimary)
-                        .lineLimit(2)
-
-                    HStack(spacing: 8) {
-                        tag("Citrus")
-                        tag("Floral")
-                    }
-
-                    Button {
-                        store.setSelectedTab(.brew)
-                    } label: {
-                        Text("Start Ritual")
-                            .font(.headline.weight(.bold))
-                            .foregroundColor(.white)
-                            .padding(.horizontal, 20)
-                            .padding(.vertical, 10)
-                            .background(accent)
-                            .clipShape(Capsule())
-                    }
-                }
-
-                Spacer()
-
-                Image(store.featuredRitual.imageName)
-                    .resizable()
-                    .scaledToFill()
-                    .frame(width: 84, height: 84)
-                    .clipShape(Circle())
-                    .overlay(Circle().stroke(Color.white.opacity(0.12), lineWidth: 1))
-            }
-            .padding(16)
-            .coffeeSecondaryCard(cornerRadius: 20)
-        }
-    }
-
-    private func tag(_ text: String) -> some View {
-        Text(text.uppercased())
-            .font(.caption.weight(.bold))
-            .foregroundColor(accent)
-            .padding(.horizontal, 9)
-            .padding(.vertical, 5)
-            .background(CoffeeTheme.bgSecondary)
-            .clipShape(Capsule())
-    }
-
-    private var profileContentSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(spacing: 6) {
-                ForEach(ProfileContentTab.allCases, id: \.self) { tab in
-                    Button {
-                        withAnimation(.spring(response: 0.26, dampingFraction: 0.86)) {
-                            contentTab = tab
-                        }
-                    } label: {
-                        Text(tab.title)
-                            .font(.headline.weight(.semibold))
-                            .foregroundColor(contentTab == tab ? textPrimary : textSecondary)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 11)
-                            .background(
-                                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                    .fill(contentTab == tab ? Color.white.opacity(0.9) : Color.clear)
-                            )
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                    .stroke(contentTab == tab ? CoffeeTheme.border.opacity(0.75) : Color.clear, lineWidth: 1)
-                            )
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-            .padding(6)
-            .background(CoffeeTheme.cardAlt.opacity(0.72))
-            .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: 20, style: .continuous)
-                    .stroke(CoffeeTheme.border, lineWidth: 1)
-            )
-
-            if contentTab == .drafts {
-                if hasDraft {
-                    draftCard
-                } else {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("No drafts yet.")
-                            .font(.subheadline)
-                            .foregroundColor(textSecondary)
-
-                        Button("Start a New Draft") {
-                            showComposer = true
-                        }
-                        .font(.headline.weight(.semibold))
-                        .foregroundColor(accent)
-                    }
-                    .padding(14)
-                    .coffeeCard(cornerRadius: 16)
-                }
-            } else if contentTab == .publishedRecipes {
-                if myRitualPosts.isEmpty {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("You haven’t published a recipe yet.")
-                            .font(.subheadline)
-                            .foregroundColor(textSecondary)
-
-                        Button("Share Your First Recipe") {
-                            showComposer = true
-                        }
-                        .font(.headline.weight(.semibold))
-                        .foregroundColor(accent)
-                    }
-                    .padding(14)
-                    .coffeeCard(cornerRadius: 16)
-                } else {
-                    ForEach(myRitualPosts) { post in
-                        NavigationLink(destination: BrewDetailView(ritualID: post.ritual.id)) {
-                            publishedRecipeRow(post)
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-            } else if contentTab == .savedPairings {
-                if savedPairings.isEmpty {
-                    Text("No saved pairings yet.")
-                        .font(.footnote)
-                        .foregroundColor(textSecondary)
-                        .padding(.vertical, 4)
-                } else {
-                    ForEach(savedPairings) { ritual in
-                        NavigationLink(destination: BrewDetailView(ritualID: ritual.id)) {
-                            pairingRow(ritual)
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-            } else {
-                if recentHistory.isEmpty {
-                    Text("No brews logged yet.")
-                        .font(.footnote)
-                        .foregroundColor(textSecondary)
-                        .padding(.vertical, 4)
-                } else {
-                    ForEach(recentHistory) { log in
-                        historyRow(log)
-                    }
-                }
-            }
-        }
-    }
-
-    private var draftCard: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text("DRAFT")
-                .font(.caption.weight(.bold))
-                .tracking(1.2)
-                .foregroundColor(accent)
-            Text(store.communityDraft.coffeeOriginOrBlend.isEmpty ? "Untitled Ritual" : store.communityDraft.coffeeOriginOrBlend)
-                .font(.headline)
-                .foregroundColor(textPrimary)
-            Text("Continue editing your unpublished ritual")
-                .font(.caption)
-                .foregroundColor(textSecondary)
-        }
-        .padding(12)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .coffeeCard(cornerRadius: 14)
-        .onTapGesture { showComposer = true }
-    }
-
-    private func publishedRecipeRow(_ post: CommunityPost) -> some View {
-        HStack(spacing: 12) {
-            Image(post.ritual.imageName)
-                .resizable()
-                .scaledToFill()
-                .frame(width: 102, height: 78)
-                .clipped()
-                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-
-            VStack(alignment: .leading, spacing: 4) {
-                Text(post.ritual.title)
-                    .font(.headline.weight(.semibold))
-                    .foregroundColor(textPrimary)
-                    .lineLimit(1)
-
-                Text(post.ritual.subtitle)
-                    .font(.subheadline)
-                    .foregroundColor(textSecondary)
-                    .lineLimit(1)
-
-                HStack(spacing: 10) {
-                    Label("\(post.likesCount)", systemImage: "heart.fill")
-                }
-                .font(.caption.weight(.semibold))
-                .foregroundColor(accent)
-            }
-
-            Spacer(minLength: 8)
-
-            Text(timeAgo(post.createdAt))
-                .font(.caption.italic())
-                .foregroundColor(textSecondary)
-        }
-        .padding(12)
-        .coffeeCard(cornerRadius: 16)
-    }
-
-    private func pairingRow(_ ritual: BrewRitual) -> some View {
-        HStack(spacing: 10) {
-            Image(ritual.imageName)
-                .resizable()
-                .scaledToFill()
-                .frame(width: 102, height: 78)
-                .clipped()
-                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-
-            VStack(alignment: .leading, spacing: 3) {
-                Text(ritual.title)
-                    .font(.headline)
-                    .foregroundColor(textPrimary)
-                    .lineLimit(1)
-                Text("by \(creatorName(for: ritual)) • \(ritual.method.rawValue.capitalized)")
-                    .font(.caption)
-                    .foregroundColor(textSecondary)
-            }
-
-            Spacer()
-
-            HStack(spacing: 10) {
-                NavigationLink(destination: BrewDetailView(ritualID: ritual.id)) {
-                    Text("Brew")
-                        .font(.caption.weight(.bold))
-                        .foregroundColor(accent)
-                }
-
-                Button(role: .destructive) {
-                    store.toggleSave(ritualID: ritual.id)
-                } label: {
-                    Image(systemName: "bookmark.slash")
-                        .font(.caption)
-                        .foregroundColor(textSecondary)
-                }
-            }
-        }
-        .padding(12)
-        .coffeeCard(cornerRadius: 14)
-    }
-
-    private var brewHistorySection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            sectionTitle("Brew History")
-
-            if recentHistory.isEmpty {
-                Text("No brews logged yet.")
-                    .font(.footnote)
-                    .foregroundColor(textSecondary)
-            } else {
-                ForEach(recentHistory) { log in
-                    historyRow(log)
-                }
-            }
-        }
-    }
-
-    private func historyRow(_ log: BrewLog) -> some View {
-        HStack(spacing: 10) {
-            Circle()
-                .fill(CoffeeTheme.bgSecondary)
-                .frame(width: 44, height: 44)
-                .overlay(
-                    Image(systemName: "clock.arrow.circlepath")
-                        .foregroundColor(accent)
-                )
-
-            VStack(alignment: .leading, spacing: 3) {
-                Text(log.ritualTitle)
-                    .font(.headline)
-                    .foregroundColor(textPrimary)
-                    .lineLimit(1)
-                Text(historyDate(log.brewedAt))
-                    .font(.caption)
-                    .foregroundColor(textSecondary)
-            }
-
-            Spacer()
-
-            if let ritual = ritualFromLog(log) {
-                NavigationLink(destination: BrewDetailView(ritualID: ritual.id)) {
-                    Text("Rebrew")
-                        .font(.caption.weight(.bold))
-                        .foregroundColor(accent)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 7)
-                        .overlay(Capsule().stroke(accent.opacity(0.7), lineWidth: 1))
-                }
-            }
-        }
-        .padding(12)
-        .coffeeCard(cornerRadius: 16)
-    }
-
-    private func sectionTitle(_ text: String) -> some View {
-        Text(text)
-            .font(.system(size: 28, weight: .semibold, design: .rounded))
-            .foregroundColor(textPrimary)
-    }
-
-    private func creatorName(for ritual: BrewRitual) -> String {
-        if let post = store.communityPosts.first(where: { $0.ritual.id == ritual.id }) {
-            return post.author.username
-        }
-        return "Beans&Bites"
+        return allKnownRituals.first(where: { $0.title == log.ritualTitle })
     }
 
     private func historyDate(_ date: Date) -> String {
@@ -564,47 +592,20 @@ struct ProfileScreenView: View {
         }
         return "\(seconds / day)d ago"
     }
-
-    private func ritualFromLog(_ log: BrewLog) -> BrewRitual? {
-        if let ritualID = log.ritualID {
-            return allKnownRituals.first(where: { $0.id == ritualID })
-        }
-        return allKnownRituals.first(where: { $0.title == log.ritualTitle })
-    }
-
-    private var signOutSection: some View {
-        Button {
-            showSignOutConfirm = true
-        } label: {
-            Text("Sign Out")
-                .font(.headline.weight(.semibold))
-                .foregroundStyle(Color.red.opacity(0.9))
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 14)
-                .background(CoffeeTheme.cardAlt.opacity(0.72))
-                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .stroke(Color.red.opacity(0.25), lineWidth: 1)
-                )
-        }
-        .buttonStyle(.plain)
-        .padding(.top, 4)
-    }
 }
 
 private enum ProfileContentTab: CaseIterable {
-    case drafts
     case publishedRecipes
     case savedPairings
     case history
+    case drafts
 
     var title: String {
         switch self {
-        case .drafts: return "Drafts"
         case .publishedRecipes: return "Published"
         case .savedPairings: return "Saved"
         case .history: return "History"
+        case .drafts: return "Drafts"
         }
     }
 }
@@ -628,55 +629,28 @@ private struct EditProfileView: View {
 
     var body: some View {
         NavigationStack {
-            ScrollView(showsIndicators: false) {
-                VStack(spacing: 16) {
-                    Button {
-                        showSourceSheet = true
-                    } label: {
-                        avatarPreview
+            Form {
+                Section {
+                    HStack {
+                        Spacer()
+                        Button {
+                            showSourceSheet = true
+                        } label: {
+                            avatarPreview
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                        Spacer()
                     }
-                    .buttonStyle(.plain)
-
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("Display Name")
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(CoffeeTheme.textSecondary)
-                        TextField("Your name", text: $displayName)
-                            .textInputAutocapitalization(.words)
-                            .padding(.horizontal, 14)
-                            .padding(.vertical, 12)
-                            .background(CoffeeTheme.cardAlt.opacity(0.75))
-                            .clipShape(Capsule())
-                            .overlay(Capsule().stroke(CoffeeTheme.border, lineWidth: 1))
-
-                        Text("Username")
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(CoffeeTheme.textSecondary)
-                        TextField("username", text: $username)
-                            .textInputAutocapitalization(.never)
-                            .autocorrectionDisabled()
-                            .onChange(of: username) { _, newValue in
-                                let cleaned = newValue
-                                    .replacingOccurrences(of: "@", with: "")
-                                    .replacingOccurrences(of: " ", with: "_")
-                                username = String(cleaned.prefix(18))
-                            }
-                            .padding(.horizontal, 14)
-                            .padding(.vertical, 12)
-                            .background(CoffeeTheme.cardAlt.opacity(0.75))
-                            .clipShape(Capsule())
-                            .overlay(Capsule().stroke(CoffeeTheme.border, lineWidth: 1))
-                    }
-                    .padding(16)
-                    .coffeeCard(cornerRadius: 20)
+                    .padding(.vertical, 8)
                 }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 16)
+
+                Section("Profile Information") {
+                    TextField("Display Name", text: $displayName)
+                    TextField("Username", text: $username)
+                        .autocorrectionDisabled()
+                        .textInputAutocapitalization(.never)
+                }
             }
-            .background(
-                LinearGradient(colors: [CoffeeTheme.bgPrimary, CoffeeTheme.bgSecondary], startPoint: .topLeading, endPoint: .bottomTrailing)
-                    .ignoresSafeArea()
-            )
             .navigationTitle("Edit Profile")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -698,7 +672,7 @@ private struct EditProfileView: View {
                 }
             }
         }
-        .confirmationDialog("Choose Image Source", isPresented: $showSourceSheet, titleVisibility: .visible) {
+        .confirmationDialog("Choose Photo Source", isPresented: $showSourceSheet, titleVisibility: .visible) {
             if UIImagePickerController.isSourceTypeAvailable(.camera) {
                 Button("Camera") {
                     pickerSource = .camera
@@ -732,25 +706,19 @@ private struct EditProfileView: View {
                         .resizable()
                         .scaledToFill()
                 } else {
-                    Circle()
-                        .fill(CoffeeTheme.card)
-                        .overlay(
-                            Image(systemName: "person.crop.circle.fill")
-                                .font(.system(size: 56))
-                                .foregroundStyle(CoffeeTheme.textPrimary)
-                        )
+                    Image(systemName: "person.crop.circle.fill")
+                        .font(.system(size: 88))
+                        .foregroundStyle(CoffeeTheme.accentPrimary)
                 }
             }
-            .frame(width: 124, height: 124)
+            .frame(width: 96, height: 96)
             .clipShape(Circle())
             .overlay(Circle().stroke(CoffeeTheme.border, lineWidth: 2))
 
-            Image(systemName: "square.and.pencil")
-                .font(.caption.weight(.bold))
-                .foregroundStyle(.white)
-                .padding(9)
-                .background(Circle().fill(CoffeeTheme.accentPrimary))
-                .overlay(Circle().stroke(Color.white.opacity(0.8), lineWidth: 1))
+            Image(systemName: "camera.circle.fill")
+                .font(.system(size: 26))
+                .foregroundStyle(CoffeeTheme.accentPrimary)
+                .background(Circle().fill(Color.white))
         }
     }
 

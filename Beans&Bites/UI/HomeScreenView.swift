@@ -26,26 +26,75 @@ struct HomeScreenView: View {
 
     private var formattedDate: String {
         let formatter = DateFormatter()
-        formatter.dateFormat = "EEEE, MMM d"
+        formatter.dateFormat = "EEEE, MMMM d"
         return formatter.string(from: Date()).uppercased()
     }
 
     var body: some View {
         NavigationStack {
             ScrollView(showsIndicators: false) {
-                VStack(alignment: .leading, spacing: 20) {
-                    headerSection
-                    heroRitualCard
-                    brewMethodsSection
-                    baristaAssistantPromptCard
-                    recentActivitySection
+                VStack(alignment: .leading, spacing: 24) {
+                    // Editorial Date & Greeting Subheader
+                    subHeaderGreeting
+
+                    // Hero Featured Ritual Card
+                    heroFeaturedRitualCard
+
+                    // Quick Methods Inset Section
+                    methodsSection
+
+                    // Smart Barista Assistant Callout
+                    baristaAssistantCallout
+
+                    // Recent Extraction Sessions
+                    recentSessionsSection
                 }
                 .padding(.horizontal, 20)
-                .padding(.top, 12)
-                .padding(.bottom, 36)
+                .padding(.top, 4)
+                .padding(.bottom, 64)
             }
             .background(CoffeeTheme.bgPrimary.ignoresSafeArea())
-            .navigationBarHidden(true)
+            .navigationTitle("Today")
+            .navigationBarTitleDisplayMode(.large)
+            .toolbar {
+                ToolbarItemGroup(placement: .topBarTrailing) {
+                    // Camera Bag Scanner
+                    Button {
+                        let generator = UIImpactFeedbackGenerator(style: .medium)
+                        generator.impactOccurred()
+                        showScanner = true
+                    } label: {
+                        Image(systemName: "camera.viewfinder")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundStyle(CoffeeTheme.accentPrimary)
+                    }
+                    .accessibilityLabel("Scan coffee bag")
+
+                    // Streak Badge
+                    HStack(spacing: 4) {
+                        Image(systemName: "flame.fill")
+                            .font(.system(size: 13, weight: .bold))
+                            .foregroundStyle(CoffeeTheme.accentWarmGold)
+                        Text("\(streakDays)d")
+                            .font(.system(size: 13, weight: .bold))
+                            .foregroundStyle(CoffeeTheme.textPrimary)
+                    }
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(Color(uiColor: .tertiarySystemGroupedBackground))
+                    .clipShape(Capsule())
+
+                    // Profile Button
+                    Button {
+                        store.setSelectedTab(.profile)
+                    } label: {
+                        Image(systemName: "person.crop.circle.fill")
+                            .font(.system(size: 24))
+                            .foregroundStyle(CoffeeTheme.accentPrimary)
+                    }
+                    .accessibilityLabel("View profile")
+                }
+            }
             .navigationDestination(isPresented: $showFeaturedDetail) {
                 BrewDetailView(ritualID: featured.id)
             }
@@ -68,142 +117,84 @@ struct HomeScreenView: View {
         }
     }
 
-    // MARK: - Header Section
-    private var headerSection: some View {
-        HStack(alignment: .center) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(formattedDate)
-                    .font(.system(size: 10, weight: .bold))
-                    .tracking(1.2)
-                    .foregroundStyle(CoffeeTheme.textTertiary)
+    // MARK: - Subheader Greeting
+    private var subHeaderGreeting: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(formattedDate)
+                .font(.system(size: 11, weight: .bold))
+                .tracking(1.2)
+                .foregroundStyle(CoffeeTheme.textTertiary)
 
-                Text("\(greetingText),")
-                    .font(.caption.weight(.medium))
-                    .foregroundStyle(CoffeeTheme.textSecondary)
-
-                Text(store.profile.user.displayName.components(separatedBy: " ").first ?? "Brewer")
-                    .font(.title2.weight(.bold))
-                    .foregroundStyle(CoffeeTheme.textPrimary)
-            }
-
-            Spacer()
-
-            HStack(spacing: 10) {
-                // Compact Streak Badge
-                HStack(spacing: 5) {
-                    Image(systemName: "flame.fill")
-                        .font(.caption.weight(.bold))
-                        .foregroundStyle(CoffeeTheme.accentWarmGold)
-                    Text("\(streakDays)d")
-                        .font(.caption.weight(.bold))
-                        .foregroundStyle(CoffeeTheme.textPrimary)
-                }
-                .padding(.horizontal, 10)
-                .padding(.vertical, 7)
-                .background(CoffeeTheme.card)
-                .clipShape(Capsule())
-                .overlay(Capsule().stroke(CoffeeTheme.border, lineWidth: 1))
-
-                // Quick Camera Bag Scanner
-                Button {
-                    let generator = UIImpactFeedbackGenerator(style: .medium)
-                    generator.impactOccurred()
-                    showScanner = true
-                } label: {
-                    ZStack {
-                        Circle()
-                            .fill(CoffeeTheme.card)
-                            .frame(width: 38, height: 38)
-                        Image(systemName: "camera.viewfinder")
-                            .font(.system(size: 15, weight: .bold))
-                            .foregroundStyle(CoffeeTheme.accentPrimary)
-                    }
-                    .overlay(Circle().stroke(CoffeeTheme.border, lineWidth: 1))
-                }
-                .buttonStyle(.plain)
-
-                // Profile Avatar Button
-                Button {
-                    store.setSelectedTab(.profile)
-                } label: {
-                    ZStack {
-                        Circle()
-                            .fill(CoffeeTheme.accentMuted)
-                            .frame(width: 40, height: 40)
-                        Image(systemName: "person.crop.circle.fill")
-                            .font(.system(size: 34))
-                            .foregroundStyle(CoffeeTheme.accentPrimary)
-                    }
-                    .overlay(Circle().stroke(Color.white, lineWidth: 1.5))
-                }
-                .buttonStyle(.plain)
-            }
+            Text("\(greetingText), \(store.profile.user.displayName.components(separatedBy: " ").first ?? "Brewer")")
+                .font(.subheadline.weight(.medium))
+                .foregroundStyle(CoffeeTheme.textSecondary)
         }
     }
 
-    // MARK: - Hero Ritual Card
-    private var heroRitualCard: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            // Tag Row
+    // MARK: - Hero Featured Ritual Card
+    private var heroFeaturedRitualCard: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            // Header Tags
             HStack {
                 HStack(spacing: 5) {
                     Image(systemName: "sparkles")
-                        .font(.caption2.weight(.bold))
-                    Text("TODAY'S RITUAL")
-                        .font(.caption2.weight(.bold))
+                        .font(.system(size: 10, weight: .bold))
+                    Text("FEATURED RITUAL")
+                        .font(.system(size: 10, weight: .bold))
                         .tracking(1)
                 }
-                .foregroundStyle(CoffeeTheme.accentPrimary)
+                .foregroundStyle(CoffeeTheme.accentWarmGold)
                 .padding(.horizontal, 10)
                 .padding(.vertical, 5)
-                .background(CoffeeTheme.accentMuted.opacity(0.6))
+                .background(Color.black.opacity(0.3))
                 .clipShape(Capsule())
 
                 Spacer()
 
                 HStack(spacing: 4) {
                     Image(systemName: methodIcon(for: featured.method))
-                        .font(.caption2)
+                        .font(.system(size: 10, weight: .bold))
                     Text(featured.method.rawValue.capitalized)
-                        .font(.caption2.weight(.bold))
+                        .font(.system(size: 11, weight: .bold))
                 }
-                .foregroundStyle(CoffeeTheme.textSecondary)
+                .foregroundStyle(.white.opacity(0.9))
                 .padding(.horizontal, 10)
                 .padding(.vertical, 5)
-                .background(CoffeeTheme.cardAlt)
+                .background(Color.white.opacity(0.15))
                 .clipShape(Capsule())
             }
 
-            // Title & Bean
-            VStack(alignment: .leading, spacing: 4) {
+            // Title & Bean Information
+            VStack(alignment: .leading, spacing: 6) {
                 Text(featured.title)
-                    .font(.title2.weight(.bold))
-                    .foregroundStyle(CoffeeTheme.textPrimary)
+                    .font(.system(size: 28, weight: .bold, design: .rounded))
+                    .foregroundStyle(.white)
                     .lineLimit(2)
 
                 Text("\(featured.bean.name) • \(featured.bean.origin)")
                     .font(.subheadline)
-                    .foregroundStyle(CoffeeTheme.textSecondary)
+                    .foregroundStyle(Color.white.opacity(0.8))
                     .lineLimit(1)
             }
 
-            // Clean Extraction Metric Summary
+            // Translucent Specs Pill
             HStack(spacing: 12) {
-                metricItem(icon: "scalemass.fill", text: "\(Int(featured.metrics.doseGrams))g")
-                Text("•").foregroundStyle(CoffeeTheme.textTertiary)
-                metricItem(icon: "drop.fill", text: "\(featured.metrics.waterMilliliters)ml")
-                Text("•").foregroundStyle(CoffeeTheme.textTertiary)
-                metricItem(icon: "timer", text: TimeFormatting.mmss(from: featured.metrics.targetTimeSeconds))
-                Text("•").foregroundStyle(CoffeeTheme.textTertiary)
-                metricItem(icon: "thermometer.medium", text: "\(featured.metrics.temperatureCelsius)°C")
+                heroSpecItem(icon: "scalemass.fill", text: "\(Int(featured.metrics.doseGrams))g")
+                Text("•").foregroundStyle(Color.white.opacity(0.4))
+                heroSpecItem(icon: "drop.fill", text: "\(featured.metrics.waterMilliliters)ml")
+                Text("•").foregroundStyle(Color.white.opacity(0.4))
+                heroSpecItem(icon: "timer", text: TimeFormatting.mmss(from: featured.metrics.targetTimeSeconds))
+                Text("•").foregroundStyle(Color.white.opacity(0.4))
+                heroSpecItem(icon: "thermometer.medium", text: "\(featured.metrics.temperatureCelsius)°C")
                 Spacer()
             }
-            .font(.caption.weight(.medium))
-            .foregroundStyle(CoffeeTheme.textSecondary)
-            .padding(.top, 2)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(Color.white.opacity(0.12))
+            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
 
-            // Primary Action Buttons
-            HStack(spacing: 10) {
+            // Action Buttons
+            HStack(spacing: 12) {
                 Button {
                     let generator = UIImpactFeedbackGenerator(style: .medium)
                     generator.impactOccurred()
@@ -211,63 +202,75 @@ struct HomeScreenView: View {
                 } label: {
                     HStack(spacing: 6) {
                         Image(systemName: "play.fill")
-                            .font(.caption.weight(.bold))
+                            .font(.system(size: 12, weight: .bold))
                         Text("Start Brew")
                             .font(.subheadline.weight(.bold))
                     }
-                    .foregroundStyle(.white)
+                    .foregroundStyle(Color(hex: "2B1808"))
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 14)
-                    .background(
-                        LinearGradient(
-                            colors: [CoffeeTheme.accentWarmGold, CoffeeTheme.accentPrimary],
-                            startPoint: .leading,
-                            endPoint: .trailing
-                        )
-                    )
+                    .background(Color.white)
                     .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-                    .shadow(color: CoffeeTheme.accentPrimary.opacity(0.25), radius: 6, x: 0, y: 3)
+                    .shadow(color: Color.black.opacity(0.15), radius: 8, y: 4)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.bounce)
 
                 Button {
                     showFeaturedDetail = true
                 } label: {
-                    Text("Details")
+                    Text("Recipe Details")
                         .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(CoffeeTheme.textPrimary)
+                        .foregroundStyle(.white)
                         .padding(.horizontal, 18)
                         .padding(.vertical, 14)
-                        .background(CoffeeTheme.cardAlt)
+                        .background(Color.white.opacity(0.18))
                         .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.bounce)
             }
             .padding(.top, 4)
         }
-        .padding(18)
-        .coffeeCard(cornerRadius: 24)
+        .padding(20)
+        .background(
+            LinearGradient(
+                colors: [
+                    Color(hex: "3D2314"),
+                    Color(hex: "24140B")
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                .stroke(Color.white.opacity(0.1), lineWidth: 1)
+        )
+        .shadow(color: Color.black.opacity(0.12), radius: 14, x: 0, y: 6)
     }
 
-    private func metricItem(icon: String, text: String) -> some View {
+    private func heroSpecItem(icon: String, text: String) -> some View {
         HStack(spacing: 4) {
             Image(systemName: icon)
-                .font(.system(size: 11))
-                .foregroundStyle(CoffeeTheme.accentPrimary)
+                .font(.system(size: 10))
+                .foregroundStyle(CoffeeTheme.accentWarmGold)
             Text(text)
                 .font(.caption.weight(.semibold))
-                .foregroundStyle(CoffeeTheme.textPrimary)
+                .foregroundStyle(.white)
         }
     }
 
-    // MARK: - Methods Row
-    private var brewMethodsSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
+    // MARK: - Brew Methods Section
+    private var methodsSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Text("Brew Methods")
-                    .font(.headline.weight(.bold))
-                    .foregroundStyle(CoffeeTheme.textPrimary)
+                Text("BREW METHODS")
+                    .font(.footnote.weight(.bold))
+                    .tracking(1)
+                    .foregroundStyle(CoffeeTheme.textSecondary)
+
                 Spacer()
+
                 Button("View All") {
                     store.setSelectedTab(.brew)
                 }
@@ -276,18 +279,18 @@ struct HomeScreenView: View {
             }
 
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 10) {
-                    methodCard(title: "Pour Over", method: .v60, icon: "drop.fill", ratio: "1:16")
-                    methodCard(title: "Espresso", method: .espresso, icon: "cup.and.saucer.fill", ratio: "1:2")
-                    methodCard(title: "AeroPress", method: .aeropress, icon: "cylinder.split.1x2.fill", ratio: "1:14")
-                    methodCard(title: "French Press", method: .frenchPress, icon: "water.waves", ratio: "1:12")
-                    methodCard(title: "Cold Brew", method: .coldBrew, icon: "snowflake", ratio: "1:8")
+                HStack(spacing: 12) {
+                    methodPill(title: "Pour Over", method: .v60, icon: "drop.fill", ratio: "1:16")
+                    methodPill(title: "Espresso", method: .espresso, icon: "cup.and.saucer.fill", ratio: "1:2")
+                    methodPill(title: "AeroPress", method: .aeropress, icon: "cylinder.split.1x2.fill", ratio: "1:14")
+                    methodPill(title: "French Press", method: .frenchPress, icon: "water.waves", ratio: "1:12")
+                    methodPill(title: "Cold Brew", method: .coldBrew, icon: "snowflake", ratio: "1:8")
                 }
             }
         }
     }
 
-    private func methodCard(title: String, method: BrewMethod, icon: String, ratio: String) -> some View {
+    private func methodPill(title: String, method: BrewMethod, icon: String, ratio: String) -> some View {
         Button {
             let matching = (store.curatedRituals + store.trendingRituals + [store.featuredRitual]).first { $0.method == method }
             if let matching {
@@ -299,30 +302,32 @@ struct HomeScreenView: View {
             VStack(alignment: .leading, spacing: 8) {
                 ZStack {
                     Circle()
-                        .fill(CoffeeTheme.accentMuted.opacity(0.8))
-                        .frame(width: 38, height: 38)
+                        .fill(CoffeeTheme.accentPrimary.opacity(0.12))
+                        .frame(width: 40, height: 40)
                     Image(systemName: icon)
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(.system(size: 17, weight: .semibold))
                         .foregroundStyle(CoffeeTheme.accentPrimary)
                 }
 
-                Text(title)
-                    .font(.subheadline.weight(.bold))
-                    .foregroundStyle(CoffeeTheme.textPrimary)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title)
+                        .font(.subheadline.weight(.bold))
+                        .foregroundStyle(CoffeeTheme.textPrimary)
 
-                Text(ratio)
-                    .font(.caption2.weight(.medium))
-                    .foregroundStyle(CoffeeTheme.textSecondary)
+                    Text(ratio)
+                        .font(.caption2.weight(.medium))
+                        .foregroundStyle(CoffeeTheme.textSecondary)
+                }
             }
-            .frame(width: 110, alignment: .leading)
+            .frame(width: 115, alignment: .leading)
             .padding(14)
-            .coffeeCard(cornerRadius: 16)
+            .coffeeCard(cornerRadius: 18)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.bounce)
     }
 
-    // MARK: - Smart Barista Prompt Card (Progressive Disclosure)
-    private var baristaAssistantPromptCard: some View {
+    // MARK: - Barista Assistant Callout
+    private var baristaAssistantCallout: some View {
         Button {
             let generator = UIImpactFeedbackGenerator(style: .light)
             generator.impactOccurred()
@@ -333,7 +338,7 @@ struct HomeScreenView: View {
                     Circle()
                         .fill(
                             LinearGradient(
-                                colors: [CoffeeTheme.accentWarmGold.opacity(0.25), CoffeeTheme.accentPrimary.opacity(0.15)],
+                                colors: [CoffeeTheme.accentWarmGold.opacity(0.3), CoffeeTheme.accentPrimary.opacity(0.15)],
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
                             )
@@ -350,7 +355,7 @@ struct HomeScreenView: View {
                         .font(.subheadline.weight(.bold))
                         .foregroundStyle(CoffeeTheme.textPrimary)
 
-                    Text("Tailor a recipe to your current mood & cravings")
+                    Text("Tailor a recipe to your mood and roast cravings")
                         .font(.caption)
                         .foregroundStyle(CoffeeTheme.textSecondary)
                         .lineLimit(1)
@@ -362,65 +367,82 @@ struct HomeScreenView: View {
                     .font(.caption.weight(.bold))
                     .foregroundStyle(CoffeeTheme.textTertiary)
             }
-            .padding(14)
-            .coffeeCard(cornerRadius: 18)
+            .padding(16)
+            .coffeeCard(cornerRadius: 20)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.bounce)
     }
 
-    // MARK: - Recent Activity Section
-    private var recentActivitySection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("Recent Brews")
-                .font(.headline.weight(.bold))
-                .foregroundStyle(CoffeeTheme.textPrimary)
+    // MARK: - Recent Sessions Section
+    private var recentSessionsSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("RECENT SESSIONS")
+                .font(.footnote.weight(.bold))
+                .tracking(1)
+                .foregroundStyle(CoffeeTheme.textSecondary)
 
             if store.profile.brewHistory.isEmpty {
                 HStack(spacing: 12) {
                     Image(systemName: "cup.and.saucer")
                         .font(.title3)
                         .foregroundStyle(CoffeeTheme.textTertiary)
-                    Text("No brews logged yet. Start today's ritual above!")
+                    Text("No brews recorded yet. Start today's ritual above!")
                         .font(.caption)
                         .foregroundStyle(CoffeeTheme.textSecondary)
                     Spacer()
                 }
                 .padding(16)
-                .coffeeCard(cornerRadius: 16)
+                .coffeeCard(cornerRadius: 18)
             } else {
-                ForEach(store.profile.brewHistory.prefix(2)) { log in
-                    HStack(spacing: 12) {
-                        ZStack {
-                            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                .fill(CoffeeTheme.cardAlt)
-                                .frame(width: 40, height: 40)
-                            Image(systemName: methodIcon(for: log.method))
-                                .font(.system(size: 16))
-                                .foregroundStyle(CoffeeTheme.accentPrimary)
-                        }
+                VStack(spacing: 0) {
+                    ForEach(Array(store.profile.brewHistory.prefix(3).enumerated()), id: \.element.id) { index, log in
+                        HStack(spacing: 12) {
+                            ZStack {
+                                Circle()
+                                    .fill(CoffeeTheme.cardAlt)
+                                    .frame(width: 38, height: 38)
+                                Image(systemName: methodIcon(for: log.method))
+                                    .font(.system(size: 15))
+                                    .foregroundStyle(CoffeeTheme.accentPrimary)
+                            }
 
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(log.ritualTitle)
-                                .font(.subheadline.weight(.semibold))
-                                .foregroundStyle(CoffeeTheme.textPrimary)
-                            Text("\(log.method.rawValue.capitalized) • \(log.brewTemperatureCelsius)°C • \(TimeFormatting.mmss(from: log.durationSeconds))")
-                                .font(.caption2)
-                                .foregroundStyle(CoffeeTheme.textSecondary)
-                        }
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(log.ritualTitle)
+                                    .font(.subheadline.weight(.semibold))
+                                    .foregroundStyle(CoffeeTheme.textPrimary)
+                                    .lineLimit(1)
 
-                        Spacer()
-
-                        HStack(spacing: 2) {
-                            ForEach(1...5, id: \.self) { star in
-                                Image(systemName: star <= log.rating ? "star.fill" : "star")
+                                Text("\(log.method.rawValue.capitalized) • \(log.brewTemperatureCelsius)°C • \(TimeFormatting.mmss(from: log.durationSeconds))")
                                     .font(.caption2)
-                                    .foregroundStyle(star <= log.rating ? CoffeeTheme.accentWarmGold : Color.gray.opacity(0.3))
+                                    .foregroundStyle(CoffeeTheme.textSecondary)
+                            }
+
+                            Spacer()
+
+                            HStack(spacing: 2) {
+                                ForEach(1...5, id: \.self) { star in
+                                    Image(systemName: star <= log.rating ? "star.fill" : "star")
+                                        .font(.caption2)
+                                        .foregroundStyle(star <= log.rating ? CoffeeTheme.accentWarmGold : Color.gray.opacity(0.25))
+                                }
                             }
                         }
+                        .padding(.vertical, 12)
+                        .padding(.horizontal, 16)
+
+                        if index < min(store.profile.brewHistory.count, 3) - 1 {
+                            Divider()
+                                .padding(.leading, 64)
+                        }
                     }
-                    .padding(12)
-                    .coffeeCard(cornerRadius: 16)
                 }
+                .background(CoffeeTheme.card)
+                .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 20, style: .continuous)
+                        .stroke(CoffeeTheme.border, lineWidth: 0.8)
+                )
+                .shadow(color: CoffeeTheme.shadow, radius: 8, x: 0, y: 3)
             }
         }
     }
@@ -443,7 +465,7 @@ struct HomeScreenView: View {
     }
 }
 
-// MARK: - Smart Barista Sheet (Dedicated modal to prevent home clutter)
+// MARK: - Smart Barista Sheet
 private struct SmartBaristaSheetView: View {
     @Environment(\.dismiss) private var dismiss
     @ObservedObject private var store = AppDataStore.shared
@@ -466,130 +488,126 @@ private struct SmartBaristaSheetView: View {
             }
         } ?? store.featuredRitual
 
-        let reason = "Crafted for a \(selectedMood.rawValue.lowercased()) session with \(selectedPreference.rawValue.lowercased()) notes."
+        let reason = "Selected for a \(selectedMood.rawValue.lowercased()) morning with \(selectedPreference.rawValue.lowercased()) notes."
         return (match, reason)
     }
 
     var body: some View {
-        ScrollView(showsIndicators: false) {
-            VStack(alignment: .leading, spacing: 20) {
-                // Header
-                HStack {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Smart Barista")
-                            .font(.title2.weight(.bold))
-                            .foregroundStyle(CoffeeTheme.textPrimary)
-                        Text("Choose your mood and profile preferences")
-                            .font(.caption)
+        NavigationStack {
+            ScrollView(showsIndicators: false) {
+                VStack(alignment: .leading, spacing: 22) {
+                    // Mood Selection
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("CURRENT MOOD")
+                            .font(.footnote.weight(.bold))
                             .foregroundStyle(CoffeeTheme.textSecondary)
-                    }
-                    Spacer()
-                    Button {
-                        dismiss()
-                    } label: {
-                        Image(systemName: "xmark.circle.fill")
-                            .font(.title3)
-                            .foregroundStyle(CoffeeTheme.textTertiary)
-                    }
-                    .buttonStyle(.plain)
-                }
-                .padding(.top, 10)
 
-                // Mood Selection
-                VStack(alignment: .leading, spacing: 10) {
-                    Text("CURRENT MOOD")
-                        .font(.caption2.weight(.bold))
-                        .foregroundStyle(CoffeeTheme.textSecondary)
-
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 8) {
-                            ForEach(MoodOption.allCases, id: \.self) { mood in
-                                sheetChip(title: mood.rawValue, icon: mood.icon, isSelected: selectedMood == mood) {
-                                    selectedMood = mood
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 8) {
+                                ForEach(MoodOption.allCases, id: \.self) { mood in
+                                    sheetChip(title: mood.rawValue, icon: mood.icon, isSelected: selectedMood == mood) {
+                                        selectedMood = mood
+                                    }
                                 }
                             }
                         }
                     }
-                }
 
-                // Flavor Preference
-                VStack(alignment: .leading, spacing: 10) {
-                    Text("FLAVOR PROFILE")
-                        .font(.caption2.weight(.bold))
-                        .foregroundStyle(CoffeeTheme.textSecondary)
+                    // Flavor Profile
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("FLAVOR PROFILE")
+                            .font(.footnote.weight(.bold))
+                            .foregroundStyle(CoffeeTheme.textSecondary)
 
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 8) {
-                            ForEach(PreferenceOption.allCases, id: \.self) { pref in
-                                sheetChip(title: pref.rawValue, icon: pref.icon, isSelected: selectedPreference == pref) {
-                                    selectedPreference = pref
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 8) {
+                                ForEach(PreferenceOption.allCases, id: \.self) { pref in
+                                    sheetChip(title: pref.rawValue, icon: pref.icon, isSelected: selectedPreference == pref) {
+                                        selectedPreference = pref
+                                    }
                                 }
                             }
                         }
                     }
-                }
 
-                // Strength
-                VStack(alignment: .leading, spacing: 6) {
-                    HStack {
-                        Text("INTENSITY")
-                            .font(.caption2.weight(.bold))
-                            .foregroundStyle(CoffeeTheme.textSecondary)
-                        Spacer()
-                        Text(brewStrength < 0.34 ? "Delicate" : (brewStrength > 0.66 ? "Bold" : "Medium"))
-                            .font(.caption.weight(.bold))
-                            .foregroundStyle(CoffeeTheme.accentPrimary)
+                    // Strength Slider
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack {
+                            Text("EXTRACTION INTENSITY")
+                                .font(.footnote.weight(.bold))
+                                .foregroundStyle(CoffeeTheme.textSecondary)
+                            Spacer()
+                            Text(brewStrength < 0.34 ? "Delicate" : (brewStrength > 0.66 ? "Bold" : "Medium"))
+                                .font(.caption.weight(.bold))
+                                .foregroundStyle(CoffeeTheme.accentPrimary)
+                        }
+
+                        Slider(value: $brewStrength, in: 0...1, step: 0.1)
+                            .tint(CoffeeTheme.accentPrimary)
                     }
-                    Slider(value: $brewStrength, in: 0...1, step: 0.1)
-                        .tint(CoffeeTheme.accentPrimary)
-                }
+                    .padding(14)
+                    .coffeeCard(cornerRadius: 16)
 
-                // Recommended Result Box
-                VStack(alignment: .leading, spacing: 10) {
-                    Text("RECOMMENDED MATCH")
-                        .font(.caption2.weight(.bold))
-                        .foregroundStyle(CoffeeTheme.accentPrimary)
+                    // Recommendation Card
+                    VStack(alignment: .leading, spacing: 12) {
+                        HStack {
+                            Image(systemName: "wand.and.stars")
+                                .font(.caption.weight(.bold))
+                                .foregroundStyle(CoffeeTheme.accentWarmGold)
+                            Text("RECOMMENDED MATCH")
+                                .font(.system(size: 11, weight: .bold))
+                                .tracking(1)
+                                .foregroundStyle(CoffeeTheme.accentPrimary)
+                        }
 
-                    HStack {
                         VStack(alignment: .leading, spacing: 4) {
                             Text(recommendation.ritual.title)
-                                .font(.headline)
+                                .font(.title3.weight(.bold))
                                 .foregroundStyle(CoffeeTheme.textPrimary)
-                            Text(recommendation.reasoning)
-                                .font(.caption)
-                                .foregroundStyle(CoffeeTheme.textSecondary)
-                                .lineLimit(2)
-                        }
-                        Spacer()
-                    }
 
-                    Button {
-                        let generator = UIImpactFeedbackGenerator(style: .medium)
-                        generator.impactOccurred()
-                        onSelectRitual(recommendation.ritual)
-                    } label: {
-                        HStack {
-                            Image(systemName: "play.fill")
-                            Text("Brew This Recipe")
+                            Text(recommendation.reasoning)
+                                .font(.subheadline)
+                                .foregroundStyle(CoffeeTheme.textSecondary)
                         }
-                        .font(.subheadline.weight(.bold))
-                        .foregroundStyle(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 14)
-                        .background(CoffeeTheme.accentPrimary)
-                        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+
+                        Button {
+                            let generator = UIImpactFeedbackGenerator(style: .medium)
+                            generator.impactOccurred()
+                            onSelectRitual(recommendation.ritual)
+                        } label: {
+                            HStack(spacing: 6) {
+                                Image(systemName: "play.fill")
+                                Text("Brew This Recipe")
+                            }
+                            .font(.subheadline.weight(.bold))
+                            .foregroundStyle(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 14)
+                            .background(CoffeeTheme.accentPrimary)
+                            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                            .shadow(color: CoffeeTheme.accentPrimary.opacity(0.3), radius: 6, y: 3)
+                        }
+                        .buttonStyle(.bounce)
+                        .padding(.top, 4)
                     }
-                    .buttonStyle(.plain)
-                    .padding(.top, 4)
+                    .padding(18)
+                    .coffeeCard(cornerRadius: 20)
                 }
-                .padding(16)
-                .background(CoffeeTheme.cardAlt)
-                .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+                .padding(20)
             }
-            .padding(.horizontal, 20)
-            .padding(.vertical, 16)
+            .background(CoffeeTheme.bgPrimary.ignoresSafeArea())
+            .navigationTitle("Barista Assistant")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Done") {
+                        dismiss()
+                    }
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(CoffeeTheme.accentPrimary)
+                }
+            }
         }
-        .background(CoffeeTheme.bgPrimary.ignoresSafeArea())
     }
 
     private func sheetChip(title: String, icon: String, isSelected: Bool, action: @escaping () -> Void) -> some View {
@@ -602,11 +620,14 @@ private struct SmartBaristaSheetView: View {
             }
             .foregroundStyle(isSelected ? .white : CoffeeTheme.textPrimary)
             .padding(.horizontal, 14)
-            .padding(.vertical, 8)
-            .background(isSelected ? CoffeeTheme.accentPrimary : CoffeeTheme.cardAlt)
+            .padding(.vertical, 9)
+            .background(isSelected ? CoffeeTheme.accentPrimary : CoffeeTheme.card)
             .clipShape(Capsule())
+            .overlay(
+                Capsule().stroke(isSelected ? Color.clear : CoffeeTheme.border, lineWidth: 1)
+            )
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.bounce)
     }
 }
 

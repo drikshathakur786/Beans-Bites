@@ -12,6 +12,7 @@ struct BrewScreenView: View {
     @State private var query: String = ""
     @State private var selectedFilter: BrewFilter = .all
     @State private var selectedRitualForBrew: BrewRitual?
+    @State private var showCreateRecipe = false
 
     private var allOfficialRituals: [BrewRitual] {
         uniqueRituals(store.curatedRituals + store.trendingRituals + [store.featuredRitual])
@@ -59,12 +60,9 @@ struct BrewScreenView: View {
         return filtered.filter {
             $0.title.lowercased().contains(term) ||
             $0.subtitle.lowercased().contains(term) ||
-            $0.bean.name.lowercased().contains(term)
+            $0.bean.name.lowercased().contains(term) ||
+            $0.bean.origin.lowercased().contains(term)
         }
-    }
-
-    private var pairingRituals: [BrewRitual] {
-        uniqueRituals(allBrewRituals.filter { $0.pairing != nil })
     }
 
     private var weeklyPairing: BrewRitual? {
@@ -74,174 +72,151 @@ struct BrewScreenView: View {
     var body: some View {
         NavigationStack {
             ScrollView(showsIndicators: false) {
-                VStack(alignment: .leading, spacing: 22) {
-                    headerSection
-                    searchBarSection
-                    filterChipsSection
+                VStack(alignment: .leading, spacing: 20) {
+                    // Filter Chips Bar
+                    filterCapsulesBar
 
-                    if let pairing = weeklyPairing, query.isEmpty, selectedFilter == .pairings {
-                        featuredPairingSection(pairing)
+                    // Featured Food Pairing Card (when in pairings mode or general view)
+                    if let pairing = weeklyPairing, query.isEmpty, (selectedFilter == .pairings || selectedFilter == .all) {
+                        featuredPairingCard(pairing)
                     }
 
-                    recipesGridSection
+                    // Recipe Catalog Grid
+                    recipesCatalogSection
                 }
                 .padding(.horizontal, 20)
-                .padding(.top, 12)
-                .padding(.bottom, 36)
+                .padding(.top, 8)
+                .padding(.bottom, 64)
             }
             .background(CoffeeTheme.bgPrimary.ignoresSafeArea())
-            .navigationBarHidden(true)
+            .navigationTitle("Brew")
+            .navigationBarTitleDisplayMode(.large)
+            .searchable(
+                text: $query,
+                placement: .automatic,
+                prompt: "Search recipes, origins, roasts..."
+            )
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        let generator = UIImpactFeedbackGenerator(style: .medium)
+                        generator.impactOccurred()
+                        showCreateRecipe = true
+                    } label: {
+                        Image(systemName: "plus")
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundStyle(CoffeeTheme.accentPrimary)
+                    }
+                    .accessibilityLabel("Create custom ritual")
+                }
+            }
+            .sheet(isPresented: $showCreateRecipe) {
+                CreateRecipeFlowView()
+                    .presentationDetents([.large])
+                    .presentationCornerRadius(32)
+            }
             .sheet(item: $selectedRitualForBrew) { ritual in
                 BrewFlowView(ritual: ritual)
             }
         }
     }
 
-    // MARK: - Header
-    private var headerSection: some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 4) {
-                Text("DISCOVER & BREW")
-                    .font(.caption2.weight(.bold))
-                    .tracking(1.4)
-                    .foregroundStyle(CoffeeTheme.textTertiary)
-
-                Text("Recipes & Rituals")
-                    .font(.largeTitle.weight(.bold))
-                    .foregroundStyle(CoffeeTheme.textPrimary)
-            }
-
-            Spacer()
-
-            NavigationLink(destination: CreateRecipeFlowView()) {
-                ZStack {
-                    Circle()
-                        .fill(CoffeeTheme.accentMuted.opacity(0.8))
-                        .frame(width: 44, height: 44)
-                    Image(systemName: "plus")
-                        .font(.system(size: 18, weight: .bold))
-                        .foregroundStyle(CoffeeTheme.accentPrimary)
-                }
-            }
-            .buttonStyle(PlainButtonStyle())
-        }
-    }
-
-    // MARK: - Search
-    private var searchBarSection: some View {
-        HStack(spacing: 10) {
-            Image(systemName: "magnifyingglass")
-                .font(.subheadline)
-                .foregroundStyle(CoffeeTheme.textTertiary)
-
-            TextField("Search beans, roasts, methods...", text: $query)
-                .font(.subheadline)
-                .foregroundStyle(CoffeeTheme.textPrimary)
-
-            if !query.isEmpty {
-                Button {
-                    query = ""
-                } label: {
-                    Image(systemName: "xmark.circle.fill")
-                        .font(.caption)
-                        .foregroundStyle(CoffeeTheme.textTertiary)
-                }
-            }
-        }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 12)
-        .background(CoffeeTheme.card)
-        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .stroke(CoffeeTheme.borderSubtle, lineWidth: 1)
-        )
-        .shadow(color: CoffeeTheme.shadowSubtle, radius: 4, x: 0, y: 2)
-    }
-
-    // MARK: - Filter Chips
-    private var filterChipsSection: some View {
+    // MARK: - Filter Capsules Bar
+    private var filterCapsulesBar: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
                 ForEach(BrewFilter.allCases, id: \.self) { filter in
+                    let isSelected = selectedFilter == filter
                     Button {
-                        selectedFilter = filter
+                        let generator = UIImpactFeedbackGenerator(style: .light)
+                        generator.impactOccurred()
+                        withAnimation(.spring(response: 0.25, dampingFraction: 0.75)) {
+                            selectedFilter = filter
+                        }
                     } label: {
                         HStack(spacing: 6) {
                             Image(systemName: filter.icon)
-                                .font(.caption2.weight(.semibold))
+                                .font(.system(size: 11, weight: .semibold))
                                 .symbolRenderingMode(.hierarchical)
+
                             Text(filter.title)
-                                .font(.caption.weight(.semibold))
+                                .font(.system(size: 13, weight: .semibold))
                         }
-                        .foregroundStyle(selectedFilter == filter ? .white : CoffeeTheme.textPrimary)
+                        .foregroundStyle(isSelected ? .white : CoffeeTheme.textPrimary)
                         .padding(.horizontal, 14)
-                        .padding(.vertical, 9)
-                        .background(selectedFilter == filter ? CoffeeTheme.accentPrimary : CoffeeTheme.card)
+                        .padding(.vertical, 8)
+                        .background(
+                            isSelected ?
+                                CoffeeTheme.accentPrimary :
+                                Color(uiColor: .secondarySystemGroupedBackground)
+                        )
                         .clipShape(Capsule())
                         .overlay(
                             Capsule()
-                                .stroke(selectedFilter == filter ? Color.clear : CoffeeTheme.border.opacity(0.6), lineWidth: 1)
+                                .stroke(
+                                    isSelected ? Color.clear : Color(uiColor: .separator).opacity(0.3),
+                                    lineWidth: 0.5
+                                )
                         )
-                        .shadow(color: selectedFilter == filter ? CoffeeTheme.accentPrimary.opacity(0.2) : Color.clear, radius: 4, y: 2)
                     }
-                    .buttonStyle(PlainButtonStyle())
+                    .buttonStyle(PressableBounceButtonStyle())
                 }
             }
+            .padding(.vertical, 2)
         }
     }
 
     // MARK: - Featured Pairing Card
-    private func featuredPairingSection(_ ritual: BrewRitual) -> some View {
+    private func featuredPairingCard(_ ritual: BrewRitual) -> some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack {
                 HStack(spacing: 5) {
                     Image(systemName: "fork.knife")
-                        .font(.caption2.weight(.bold))
-                    Text("PAIRING OF THE WEEK")
-                        .font(.caption2.weight(.bold))
+                        .font(.system(size: 10, weight: .bold))
+                    Text("TASTING HARMONY")
+                        .font(.system(size: 10, weight: .bold))
                         .tracking(1)
                 }
-                .foregroundStyle(CoffeeTheme.accentPrimary)
+                .foregroundStyle(CoffeeTheme.accentWarmGold)
                 .padding(.horizontal, 10)
-                .padding(.vertical, 5)
-                .background(CoffeeTheme.accentMuted.opacity(0.6))
+                .padding(.vertical, 4)
+                .background(Color.black.opacity(0.3))
                 .clipShape(Capsule())
 
                 Spacer()
 
                 if let pairing = ritual.pairing {
                     Text(pairing.category)
-                        .font(.caption2.weight(.semibold))
-                        .foregroundStyle(CoffeeTheme.textTertiary)
+                        .font(.caption2.weight(.bold))
+                        .foregroundStyle(.white.opacity(0.75))
                 }
             }
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(ritual.title)
                     .font(.title3.weight(.bold))
-                    .foregroundStyle(CoffeeTheme.textPrimary)
+                    .foregroundStyle(.white)
 
                 if let pairing = ritual.pairing {
                     Text("Paired with \(pairing.name)")
                         .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(CoffeeTheme.accentPrimary)
+                        .foregroundStyle(CoffeeTheme.accentWarmGold)
                 }
 
-                Text("A calibrated tasting harmony between bright acidity and rich pastry notes.")
+                Text("A calibrated sensory balance between origin acidity and sweet artisanal notes.")
                     .font(.caption)
-                    .foregroundStyle(CoffeeTheme.textSecondary)
+                    .foregroundStyle(.white.opacity(0.85))
                     .lineLimit(2)
             }
 
             HStack(spacing: 12) {
                 NavigationLink(destination: BrewDetailView(ritualID: ritual.id)) {
-                    Text("View Pairing")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(CoffeeTheme.textSecondary)
+                    Text("View Recipe")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.white)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 10)
-                        .background(CoffeeTheme.cardAlt)
+                        .background(Color.white.opacity(0.18))
                         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                 }
 
@@ -252,73 +227,98 @@ struct BrewScreenView: View {
                 } label: {
                     HStack(spacing: 6) {
                         Image(systemName: "play.fill")
-                            .font(.caption2.weight(.bold))
+                            .font(.system(size: 11, weight: .bold))
                         Text("Brew Now")
-                            .font(.caption.weight(.bold))
+                            .font(.subheadline.weight(.bold))
                     }
-                    .foregroundStyle(.white)
+                    .foregroundStyle(Color(hex: "1F140E"))
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 10)
-                    .background(CoffeeTheme.accentPrimary)
+                    .background(CoffeeTheme.accentWarmGold)
                     .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                 }
+                .buttonStyle(PressableBounceButtonStyle())
             }
         }
         .padding(18)
-        .coffeeCard()
+        .background(
+            LinearGradient(
+                colors: [Color(hex: "241711"), Color(hex: "38241B")],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .stroke(Color.white.opacity(0.12), lineWidth: 0.5)
+        )
+        .shadow(color: Color.black.opacity(0.12), radius: 8, x: 0, y: 4)
     }
 
-    // MARK: - Recipes Grid
-    private var recipesGridSection: some View {
+    // MARK: - Recipe Catalog Section
+    private var recipesCatalogSection: some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack {
-                Text("All Recipes")
+                Text(selectedFilter == .all ? "All Rituals" : selectedFilter.title)
                     .font(.title3.weight(.bold))
                     .foregroundStyle(CoffeeTheme.textPrimary)
 
                 Spacer()
 
-                Text("\(brewRituals.count) available")
-                    .font(.caption.weight(.medium))
+                Text("\(brewRituals.count) rituals")
+                    .font(.caption.weight(.semibold))
                     .foregroundStyle(CoffeeTheme.textTertiary)
             }
 
             if brewRituals.isEmpty {
-                VStack(spacing: 10) {
+                VStack(spacing: 12) {
                     Image(systemName: "cup.and.saucer")
-                        .font(.largeTitle)
+                        .font(.system(size: 38))
                         .foregroundStyle(CoffeeTheme.textTertiary)
-                    Text("No recipes found matching your filter.")
+                    Text("No recipes found")
+                        .font(.headline)
+                        .foregroundStyle(CoffeeTheme.textPrimary)
+                    Text("Try adjusting your search terms or filter.")
                         .font(.subheadline)
                         .foregroundStyle(CoffeeTheme.textSecondary)
                 }
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 32)
-                .coffeeCard()
+                .padding(.vertical, 40)
+                .background(Color(uiColor: .secondarySystemGroupedBackground))
+                .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 20, style: .continuous)
+                        .stroke(Color(uiColor: .separator).opacity(0.3), lineWidth: 0.5)
+                )
             } else {
-                let columns = [GridItem(.flexible(), spacing: 14), GridItem(.flexible(), spacing: 14)]
+                let columns = [
+                    GridItem(.flexible(), spacing: 14),
+                    GridItem(.flexible(), spacing: 14)
+                ]
                 LazyVGrid(columns: columns, spacing: 14) {
                     ForEach(brewRituals) { ritual in
                         NavigationLink(destination: BrewDetailView(ritualID: ritual.id)) {
-                            recipeGridCard(ritual, creatorName: creatorByRitualID[ritual.id])
+                            recipeGridCard(ritual)
                         }
-                        .buttonStyle(PlainButtonStyle())
+                        .buttonStyle(PressableBounceButtonStyle())
                     }
                 }
             }
         }
     }
 
-    private func recipeGridCard(_ ritual: BrewRitual, creatorName: String?) -> some View {
+    // MARK: - Recipe Grid Card
+    private func recipeGridCard(_ ritual: BrewRitual) -> some View {
         VStack(alignment: .leading, spacing: 10) {
-            // Top Row: Method Icon & Heart
+            // Top Row: Method Icon Pill & Favorite Heart
             HStack {
                 ZStack {
                     Circle()
-                        .fill(CoffeeTheme.cardAlt)
-                        .frame(width: 36, height: 36)
+                        .fill(CoffeeTheme.accentPrimary.opacity(0.12))
+                        .frame(width: 34, height: 34)
                     Image(systemName: methodIcon(for: ritual.method))
-                        .font(.system(size: 16))
+                        .font(.system(size: 14, weight: .semibold))
                         .foregroundStyle(CoffeeTheme.accentPrimary)
                 }
 
@@ -330,19 +330,20 @@ struct BrewScreenView: View {
                     store.toggleSave(ritualID: ritual.id)
                 } label: {
                     Image(systemName: ritual.isSaved ? "heart.fill" : "heart")
-                        .font(.subheadline)
-                        .foregroundStyle(ritual.isSaved ? Color.red.opacity(0.85) : CoffeeTheme.textTertiary)
+                        .font(.system(size: 16))
+                        .foregroundStyle(ritual.isSaved ? Color.red : CoffeeTheme.textTertiary)
                 }
+                .buttonStyle(PlainButtonStyle())
             }
 
             // Recipe Title
             Text(ritual.title)
-                .font(.headline.weight(.bold))
+                .font(.subheadline.weight(.bold))
                 .foregroundStyle(CoffeeTheme.textPrimary)
                 .lineLimit(2)
-                .frame(minHeight: 44, alignment: .topLeading)
+                .frame(minHeight: 38, alignment: .topLeading)
 
-            // Bean Origin & Roast
+            // Origin & Roast Badge
             HStack(spacing: 4) {
                 Text(ritual.bean.origin)
                 Text("•")
@@ -352,7 +353,7 @@ struct BrewScreenView: View {
             .foregroundStyle(CoffeeTheme.textSecondary)
             .lineLimit(1)
 
-            // Metrics Badge Row
+            // Metrics Row
             HStack(spacing: 6) {
                 HStack(spacing: 3) {
                     Image(systemName: "timer")
@@ -361,13 +362,13 @@ struct BrewScreenView: View {
                 Text("•")
                 HStack(spacing: 3) {
                     Image(systemName: "scalemass")
-                    Text("\(ritual.metrics.doseGrams)g")
+                    Text("\(Int(ritual.metrics.doseGrams.rounded()))g")
                 }
             }
-            .font(.system(size: 10, weight: .semibold))
+            .font(.system(size: 10, weight: .medium))
             .foregroundStyle(CoffeeTheme.textTertiary)
 
-            // Quick Brew CTA Pill
+            // Ratio & Chevron
             HStack {
                 Text(ritual.metrics.ratioText)
                     .font(.caption2.weight(.bold))
@@ -376,13 +377,20 @@ struct BrewScreenView: View {
                 Spacer()
 
                 Image(systemName: "chevron.right.circle.fill")
-                    .font(.subheadline)
-                    .foregroundStyle(CoffeeTheme.accentPrimary.opacity(0.8))
+                    .font(.system(size: 16))
+                    .symbolRenderingMode(.hierarchical)
+                    .foregroundStyle(CoffeeTheme.accentPrimary)
             }
-            .padding(.top, 4)
+            .padding(.top, 2)
         }
         .padding(14)
-        .coffeeCard(cornerRadius: 18)
+        .background(Color(uiColor: .secondarySystemGroupedBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(Color(uiColor: .separator).opacity(0.3), lineWidth: 0.5)
+        )
+        .shadow(color: Color.black.opacity(0.04), radius: 4, x: 0, y: 2)
     }
 
     private func methodIcon(for method: BrewMethod) -> String {
