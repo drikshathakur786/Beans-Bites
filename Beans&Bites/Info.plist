@@ -3,8 +3,8 @@
 <plist version="1.0">
 <dict>
 	<key>NSCameraUsageDescription</key>
-	<string>Use camera to capture your profile photo.</string>
+	<string>Beans &amp; Bites uses the camera to scan and automatically detect coffee bean bag details, origin, and roast dates.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Allow access to your photo library to choose a profile photo.</string>
+	<string>Beans &amp; Bites allows choosing coffee bag photos to extract bean parameters.</string>
 </dict>
 </plist>

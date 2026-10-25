@@ -12,6 +12,7 @@ struct HomeScreenView: View {
     private var featured: BrewRitual { store.featuredRitual }
     @State private var showFeaturedDetail: Bool = false
     @State private var showBaristaSheet: Bool = false
+    @State private var showScanner: Bool = false
     @State private var selectedRitualForBrew: BrewRitual?
 
     private var streakDays: Int { max(1, min(30, store.profile.stats.ritualsCount / 3)) }
@@ -61,6 +62,9 @@ struct HomeScreenView: View {
                 .presentationDetents([.medium, .large])
                 .presentationCornerRadius(32)
             }
+            .sheet(isPresented: $showScanner) {
+                CoffeeBagScannerView()
+            }
         }
     }
 
@@ -100,6 +104,24 @@ struct HomeScreenView: View {
                 .background(CoffeeTheme.card)
                 .clipShape(Capsule())
                 .overlay(Capsule().stroke(CoffeeTheme.border, lineWidth: 1))
+
+                // Quick Camera Bag Scanner
+                Button {
+                    let generator = UIImpactFeedbackGenerator(style: .medium)
+                    generator.impactOccurred()
+                    showScanner = true
+                } label: {
+                    ZStack {
+                        Circle()
+                            .fill(CoffeeTheme.card)
+                            .frame(width: 38, height: 38)
+                        Image(systemName: "camera.viewfinder")
+                            .font(.system(size: 15, weight: .bold))
+                            .foregroundStyle(CoffeeTheme.accentPrimary)
+                    }
+                    .overlay(Circle().stroke(CoffeeTheme.border, lineWidth: 1))
+                }
+                .buttonStyle(.plain)
 
                 // Profile Avatar Button
                 Button {

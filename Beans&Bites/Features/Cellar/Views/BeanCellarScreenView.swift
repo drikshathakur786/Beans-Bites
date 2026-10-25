@@ -14,6 +14,7 @@ struct BeanCellarScreenView: View {
     @Query(sort: \CoffeeBeanEntity.addedAt, order: .reverse) private var beans: [CoffeeBeanEntity]
 
     @State private var showAddBagSheet: Bool = false
+    @State private var showScanner: Bool = false
     @State private var filterFavorites: Bool = false
 
     private var displayedBeans: [CoffeeBeanEntity] {
@@ -53,16 +54,31 @@ struct BeanCellarScreenView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        let generator = UIImpactFeedbackGenerator(style: .medium)
-                        generator.impactOccurred()
-                        showAddBagSheet = true
-                    } label: {
-                        Image(systemName: "plus.circle.fill")
-                            .font(.title3)
-                            .foregroundStyle(CoffeeTheme.accentPrimary)
+                    HStack(spacing: 12) {
+                        Button {
+                            let generator = UIImpactFeedbackGenerator(style: .medium)
+                            generator.impactOccurred()
+                            showScanner = true
+                        } label: {
+                            Image(systemName: "camera.viewfinder")
+                                .font(.body.weight(.bold))
+                                .foregroundStyle(CoffeeTheme.accentPrimary)
+                        }
+
+                        Button {
+                            let generator = UIImpactFeedbackGenerator(style: .medium)
+                            generator.impactOccurred()
+                            showAddBagSheet = true
+                        } label: {
+                            Image(systemName: "plus.circle.fill")
+                                .font(.title3)
+                                .foregroundStyle(CoffeeTheme.accentPrimary)
+                        }
                     }
                 }
+            }
+            .sheet(isPresented: $showScanner) {
+                CoffeeBagScannerView()
             }
             .sheet(isPresented: $showAddBagSheet) {
                 AddBeanBagSheet()
