@@ -44,7 +44,9 @@ final class AppDataStore: ObservableObject {
             self.trendingRituals = savedState.trendingRituals
             self.editorialCards = savedState.editorialCards
             self.pairingGuides = savedState.pairingGuides
-            self.communityPosts = savedState.communityPosts
+            self.communityPosts = savedState.communityPosts.filter {
+                $0.author.username != "@marcus_brews" && $0.author.username != "@eliza_daily"
+            }
             self.profile = savedState.profile
             self.communityDraft = savedState.communityDraft
         } else {
@@ -98,7 +100,113 @@ final class AppDataStore: ObservableObject {
             }
         }
 
+        // Auto-merge authentic recipes & specialized black coffee pairings so they are always accessible
+        let authenticRecipes = AuthenticRecipeCatalog.makeAllRecipes()
+        var existingTitles = Set(curatedRituals.map(\.title) + trendingRituals.map(\.title) + [featuredRitual.title])
+        var newCurated: [BrewRitual] = []
+        for recipe in authenticRecipes {
+            if !existingTitles.contains(recipe.title) {
+                newCurated.append(recipe)
+                existingTitles.insert(recipe.title)
+            }
+        }
+        if !newCurated.isEmpty {
+            curatedRituals.append(contentsOf: newCurated)
+            trendingRituals.append(contentsOf: newCurated.prefix(6))
+            saveAppState()
+        }
+
+        let authenticPairings = AuthenticRecipeCatalog.makeAllPairingGuides()
+        var existingPairingKeys = Set(pairingGuides.map { "\($0.bean.name)|\($0.method.rawValue)" })
+        var newPairings: [CoffeePairingGuide] = []
+        for guide in authenticPairings {
+            let key = "\(guide.bean.name)|\(guide.method.rawValue)"
+            if !existingPairingKeys.contains(key) {
+                newPairings.append(guide)
+                existingPairingKeys.insert(key)
+            }
+        }
+        if !newPairings.isEmpty {
+            pairingGuides.append(contentsOf: newPairings)
+            if let index = discoverCategories.firstIndex(where: { $0.title.lowercased() == "pairings" }) {
+                discoverCategories[index].subtitle = "\(pairingGuides.count) Guides"
+            }
+            saveAppState()
+        }
+
         normalizeBrewHistoryIfNeeded()
+    }
+
+    // MARK: - Session Reset
+
+    /// Resets all user-specific data to a clean slate for a new account.
+    /// Catalog content (curated rituals, discover categories, editorial cards, pairing guides,
+    /// trending rituals, featured ritual) is kept — only personal data is wiped.
+    func resetForNewUser() {
+        let oldUserID = profile.user.id
+
+        let freshUser = AppUser(
+            username: "@new_user",
+            displayName: "Coffee Enthusiast",
+            avatarName: "avatar_alex",
+            level: 1,
+            isFollowing: false
+        )
+
+        profile = ProfileData(
+            user: freshUser,
+            subtitle: "Beginner Brewer • LVL 1",
+            stats: UserStats(ritualsCount: 0, savesCount: 0, winsCount: 0),
+            achievements: [],
+            brewHistory: [],
+            savedRituals: []
+        )
+
+        communityDraft = .empty
+        selectedTab = .home
+        activeBrewMethod = .espresso
+        feedFilter = .trending
+
+        // Un-save all rituals in the catalog lists
+        for index in curatedRituals.indices {
+            curatedRituals[index].isSaved = false
+        }
+        for index in trendingRituals.indices {
+            trendingRituals[index].isSaved = false
+        }
+        featuredRitual.isSaved = false
+
+        // Remove any user-authored community posts (posts whose author matches the old profile)
+        // Keep posts from other community members (seed / sample data)
+        communityPosts = communityPosts.filter { $0.author.id != oldUserID }
+
+        // Reset like status on any community posts that were liked by the previous user
+        for index in communityPosts.indices {
+            if communityPosts[index].isLikedByCurrentUser {
+                communityPosts[index].isLikedByCurrentUser = false
+                communityPosts[index].likesCount = max(0, communityPosts[index].likesCount - 1)
+            }
+        }
+
+        saveAppState()
+    }
+
+    /// Synchronizes the active profile with an authenticated User (used on sign-in or session restore).
+    func syncWithUser(_ user: User) {
+        profile.user.id = user.id
+        profile.user.username = user.username.hasPrefix("@") ? user.username : "@\(user.username)"
+        profile.user.displayName = user.fullName
+        profile.user.level = user.level
+        if let avatar = user.profilePic, !avatar.isEmpty {
+            profile.user.avatarName = avatar
+        }
+        if let bio = user.bio, !bio.isEmpty {
+            profile.subtitle = bio
+        }
+        if let method = user.favoriteBrewMethod {
+            activeBrewMethod = method
+        }
+        saveAppState()
     }
 
     // MARK: - Basic Updates
@@ -152,6 +260,7 @@ final class AppDataStore: ObservableObject {
     }
 
     func applySignupPersonalization(
+        userID: UUID? = nil,
         username: String,
         displayName: String,
         avatarName: String?,
@@ -159,6 +268,10 @@ final class AppDataStore: ObservableObject {
         intent: String,
         flavors: [FlavorNote]
     ) {
+        if let userID {
+            profile.user.id = userID
+        }
+
         let cleanedUsername = username
             .trimmingCharacters(in: .whitespacesAndNewlines)
             .lowercased()
@@ -594,26 +707,6 @@ private struct SeedData {
             isFollowing: true
         )
 
-        let communityOne = CommunityPost(
-            author: AppUser(username: "@marcus_brews", displayName: "Marcus", avatarName: "avatar_marcus", level: 19, isFollowing: true),
-            ritual: v60,
-            caption: "Mastering the 4:6 method with Ethiopian beans. #V60 #SpecialtyCoffee",
-            hashtags: ["#V60", "#SpecialtyCoffee"],
-            createdAt: Date().addingTimeInterval(-32 * 60),
-            likesCount: 1400,
-            commentsCount: 82
-        )
-
-        let communityTwo = CommunityPost(
-            author: AppUser(username: "@eliza_daily", displayName: "Eliza", avatarName: "avatar_eliza", level: 14, isFollowing: false),
-            ritual: flatWhite,
-            caption: "The secret to a perfect rosetta is milk at 60C. #LatteArt",
-            hashtags: ["#LatteArt"],
-            createdAt: Date().addingTimeInterval(-2 * 60 * 60),
-            likesCount: 842,
-            commentsCount: 39
-        )
-
         let profile = ProfileData(
             user: user,
             subtitle: "Master Brewer • LVL 24",
@@ -663,22 +756,26 @@ private struct SeedData {
             )
         ]
 
+        let authentic = AuthenticRecipeCatalog.makeAllRecipes()
+        let authenticPairings = AuthenticRecipeCatalog.makeAllPairingGuides()
+        let allGuides = guides + authenticPairings
+
         return SeedData(
             featuredRitual: v60,
-            curatedRituals: [kyoto, flatWhite],
+            curatedRituals: [kyoto, flatWhite] + authentic,
             discoverCategories: [
-                DiscoverCategory(title: "Pairings", subtitle: "12 Guides", iconName: "wineglass", keyword: "desserts"),
+                DiscoverCategory(title: "Pairings", subtitle: "\(allGuides.count) Guides", iconName: "wineglass", keyword: "desserts"),
                 DiscoverCategory(title: "Beans", subtitle: "Global Atlas", iconName: "globe", keyword: "origin"),
                 DiscoverCategory(title: "Roasts", subtitle: "Flavor Profiles", iconName: "flame", keyword: "roast"),
                 DiscoverCategory(title: "Grind Guide", subtitle: "Precision", iconName: "dial", keyword: "grind")
             ],
-            trendingRituals: [v60, kyoto, flatWhite],
+            trendingRituals: [v60, kyoto, flatWhite] + Array(authentic.prefix(5)),
             editorialCards: [
                 EditorialCard(categoryLabel: "Editorial", quote: "The secret to a perfect bloom lies in the first 30 seconds of patience."),
                 EditorialCard(categoryLabel: "Masterclass", quote: "The visual clarity of glass enhances the sensory perception of your pour.", author: "Elena Rostova")
             ],
-            pairingGuides: guides,
-            communityPosts: [communityOne, communityTwo],
+            pairingGuides: allGuides,
+            communityPosts: [],
             profile: profile
         )
     }

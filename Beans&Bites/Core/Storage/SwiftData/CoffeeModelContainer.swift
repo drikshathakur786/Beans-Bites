@@ -25,4 +25,17 @@ final class CoffeeModelContainer {
             fatalError("Could not initialize SwiftData container: \(error)")
         }
     }()
+
+    /// Deletes all brew session and coffee bean entities from the local SwiftData store.
+    /// Called on sign-out / new account creation to prevent data leaking between accounts.
+    static func clearAllEntities() {
+        let context = shared.mainContext
+        do {
+            try context.delete(model: BrewSessionEntity.self)
+            try context.delete(model: CoffeeBeanEntity.self)
+            try context.save()
+        } catch {
+            print("CoffeeModelContainer: failed to clear entities – \(error)")
+        }
+    }
 }

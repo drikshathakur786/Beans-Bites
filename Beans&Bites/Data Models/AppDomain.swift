@@ -85,6 +85,11 @@ final class AppDomainDataModel: ObservableObject {
         saveToDisk()
     }
 
+    func reset() {
+        state = AppNavigationState(selectedTab: .home, activeBrewMethod: .espresso, feedFilter: .trending)
+        saveToDisk()
+    }
+
     // MARK: - Persistence
     private func loadFromDisk() -> AppNavigationState? {
         Self.loadFromDisk(at: archiveURL)

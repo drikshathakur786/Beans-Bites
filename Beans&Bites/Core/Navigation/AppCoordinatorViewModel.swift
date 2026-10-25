@@ -25,4 +25,10 @@ final class AppCoordinatorViewModel: ObservableObject {
         hasCompletedOnboarding = false
         UserDefaults.standard.set(false, forKey: PersistenceKeys.hasCompletedOnboarding)
     }
+
+    /// Resets onboarding state so a new user sees the onboarding flow.
+    func resetForNewUser() {
+        hasCompletedOnboarding = false
+        UserDefaults.standard.set(false, forKey: PersistenceKeys.hasCompletedOnboarding)
+    }
 }

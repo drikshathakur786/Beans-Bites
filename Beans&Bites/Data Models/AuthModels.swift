@@ -69,6 +69,9 @@ final class AuthDataModel: ObservableObject {
             session = savedSession
             if savedSession.status == .signedIn, let userID = savedSession.userID {
                 UserDataModel.shared.restoreLoggedInUser(id: userID)
+                if let user = UserDataModel.shared.getCurrentUser() {
+                    AppDataStore.shared.syncWithUser(user)
+                }
             }
         } else {
             session = AuthSession(status: .signedOut, userID: nil, lastSignedInAt: nil)
@@ -82,9 +85,18 @@ final class AuthDataModel: ObservableObject {
         guard input.isValid else { return false }
         let manager = userDataModel ?? UserDataModel.shared
         let success = manager.login(email: input.email, password: input.password)
-        if success {
-            session = AuthSession(status: .signedIn, userID: manager.getCurrentUser()?.id, lastSignedInAt: Date())
+        if success, let user = manager.getCurrentUser() {
+            // If signing in as a different user than the current profile, clear previous user's data
+            if AppDataStore.shared.profile.user.id != user.id {
+                AppDataStore.shared.resetForNewUser()
+                CoffeeModelContainer.clearAllEntities()
+                UserDefaults.standard.removeObject(forKey: "brew_templates_v1")
+                AppCoordinatorViewModel.shared.resetForNewUser()
+                AppDomainDataModel.shared.reset()
+            }
+            session = AuthSession(status: .signedIn, userID: user.id, lastSignedInAt: Date())
             saveToDisk()
+            AppDataStore.shared.syncWithUser(user)
         }
         return success
     }
@@ -145,6 +157,23 @@ final class AuthDataModel: ObservableObject {
 
     func signOut(using userDataModel: UserDataModel? = nil) {
         let manager = userDataModel ?? UserDataModel.shared
+
+        // 1. Clear all user-specific app data
+        AppDataStore.shared.resetForNewUser()
+
+        // 2. Clear SwiftData entities (brew sessions, coffee beans)
+        CoffeeModelContainer.clearAllEntities()
+
+        // 3. Clear brew templates stored in UserDefaults
+        UserDefaults.standard.removeObject(forKey: "brew_templates_v1")
+
+        // 4. Reset onboarding so the next user sees it
+        AppCoordinatorViewModel.shared.resetForNewUser()
+
+        // 5. Reset navigation state
+        AppDomainDataModel.shared.reset()
+
+        // 6. Mark user as logged out
         manager.logout()
         session = AuthSession(status: .signedOut, userID: nil, lastSignedInAt: nil)
         saveToDisk()

@@ -60,12 +60,12 @@ struct ProfileScreenView: View {
                     metricsStrip
 
                     // Segmented Filter Control
-                    Picker("Profile Section", selection: $contentTab) {
-                        ForEach(ProfileContentTab.allCases, id: \.self) { tab in
-                            Text(tab.title).tag(tab)
-                        }
-                    }
-                    .pickerStyle(.segmented)
+                    CoffeeSegmentedPicker(
+                        selection: $contentTab,
+                        items: ProfileContentTab.allCases,
+                        title: { $0.title },
+                        icon: { $0.icon }
+                    )
                     .padding(.vertical, 4)
 
                     // Tab Content List
@@ -606,6 +606,15 @@ private enum ProfileContentTab: CaseIterable {
         case .savedPairings: return "Saved"
         case .history: return "History"
         case .drafts: return "Drafts"
+        }
+    }
+
+    var icon: String {
+        switch self {
+        case .publishedRecipes: return "cup.and.saucer"
+        case .savedPairings: return "bookmark"
+        case .history: return "clock"
+        case .drafts: return "pencil"
         }
     }
 }
