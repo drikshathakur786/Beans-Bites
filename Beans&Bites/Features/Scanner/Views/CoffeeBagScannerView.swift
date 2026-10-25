@@ -15,48 +15,85 @@ struct CoffeeBagScannerView: View {
     @State private var isScanning = false
     @State private var scanlineOffset: CGFloat = -140
     @State private var scannedData: ScannedCoffeeBagData?
+    @State private var scannedImage: UIImage?
     @State private var selectedItem: PhotosPickerItem?
     @State private var showCameraPicker = false
     @State private var cameraImage: UIImage?
     @State private var errorMessage: String?
     @State private var didSaveSuccess = false
+    @State private var showRawText = false
+
+    // Editable fields for user verification
+    @State private var editName = ""
+    @State private var editRoaster = ""
+    @State private var editOrigin = ""
+    @State private var editProcess = ""
+    @State private var editElevation = 1450
+    @State private var editRoast: RoastLevel = .medium
+    @State private var editNotes: [String] = []
 
     var body: some View {
         NavigationStack {
             ZStack {
                 Color.black.ignoresSafeArea()
 
-                VStack(spacing: 24) {
-                    // Top guidance
-                    VStack(spacing: 6) {
-                        Text("Scan Coffee Bag")
-                            .font(.title2.weight(.bold))
-                            .foregroundStyle(.white)
+                ScrollView {
+                    VStack(spacing: 20) {
+                        // Top guidance
+                        VStack(spacing: 6) {
+                            Text("Scan Coffee Bag")
+                                .font(.title2.weight(.bold))
+                                .foregroundStyle(.white)
 
-                        Text("Position the label, roaster, and origin inside the frame")
-                            .font(.caption)
-                            .foregroundStyle(Color.white.opacity(0.7))
-                            .multilineTextAlignment(.center)
-                            .padding(.horizontal, 32)
+                            Text("Apple Vision OCR extracts roaster, blend name, origin, process, and tasting notes automatically.")
+                                .font(.caption)
+                                .foregroundStyle(Color.white.opacity(0.7))
+                                .multilineTextAlignment(.center)
+                                .padding(.horizontal, 24)
+                        }
+                        .padding(.top, 16)
+
+                        // Error Banner if needed
+                        if let error = errorMessage {
+                            HStack(spacing: 8) {
+                                Image(systemName: "exclamationmark.triangle.fill")
+                                    .foregroundStyle(CoffeeTheme.accentWarmGold)
+                                Text(error)
+                                    .font(.caption)
+                                    .foregroundStyle(.white)
+                                Spacer()
+                                Button {
+                                    errorMessage = nil
+                                } label: {
+                                    Image(systemName: "xmark")
+                                        .font(.caption2)
+                                        .foregroundStyle(.white.opacity(0.6))
+                                }
+                            }
+                            .padding(12)
+                            .background(Color.red.opacity(0.2))
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                            .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.red.opacity(0.3), lineWidth: 1))
+                            .padding(.horizontal, 20)
+                        }
+
+                        // Reticle Camera Viewfinder
+                        viewfinderBox
+                            .frame(maxWidth: 320, maxHeight: scannedData == nil ? 280 : 180)
+                            .padding(.vertical, 4)
+
+                        // Results or Action Controls
+                        if scannedData != nil {
+                            scannedResultCard
+                                .transition(.move(edge: .bottom).combined(with: .opacity))
+                        } else {
+                            controlButtons
+                        }
+
+                        Spacer(minLength: 30)
                     }
-                    .padding(.top, 16)
-
-                    // Reticle Camera Viewfinder
-                    viewfinderBox
-                        .frame(maxWidth: 320, maxHeight: 320)
-                        .padding(.vertical, 8)
-
-                    // Results or Action Controls
-                    if let result = scannedData {
-                        scannedResultCard(result)
-                            .transition(.move(edge: .bottom).combined(with: .opacity))
-                    } else {
-                        controlButtons
-                    }
-
-                    Spacer()
+                    .padding(.horizontal, 20)
                 }
-                .padding(.horizontal, 20)
             }
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -67,7 +104,6 @@ struct CoffeeBagScannerView: View {
                     .foregroundStyle(.white)
                 }
             }
-            .photosPicker(isPresented: .constant(false), selection: $selectedItem, matching: .images)
             .onChange(of: selectedItem) { _, newItem in
                 Task {
                     if let data = try? await newItem?.loadTransferable(type: Data.self),
@@ -182,7 +218,7 @@ struct CoffeeBagScannerView: View {
                 if UIImagePickerController.isSourceTypeAvailable(.camera) {
                     showCameraPicker = true
                 } else {
-                    simulateScanningDemoBag()
+                    simulateScanningDemoBag(isStarbucks: true)
                 }
             } label: {
                 HStack(spacing: 8) {
@@ -200,121 +236,256 @@ struct CoffeeBagScannerView: View {
             }
             .buttonStyle(.plain)
 
-            // Photos Picker & Demo Simulation Buttons
-            HStack(spacing: 10) {
-                PhotosPicker(selection: $selectedItem, matching: .images) {
-                    HStack(spacing: 6) {
-                        Image(systemName: "photo.on.rectangle")
-                        Text("Photo Album")
-                    }
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 13)
-                    .background(Color.white.opacity(0.12))
-                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            // Photos Picker Button
+            PhotosPicker(selection: $selectedItem, matching: .images) {
+                HStack(spacing: 6) {
+                    Image(systemName: "photo.on.rectangle")
+                    Text("Choose from Photo Library")
                 }
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.white)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 13)
+                .background(Color.white.opacity(0.12))
+                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            }
 
-                Button {
-                    simulateScanningDemoBag()
-                } label: {
-                    HStack(spacing: 6) {
-                        Image(systemName: "sparkles")
-                        Text("Demo Bag")
+            // Quick Demo Simulation Buttons for Instant Testing
+            VStack(spacing: 8) {
+                Text("OR TEST DEMO BAGS IN SIMULATOR")
+                    .font(.system(size: 10, weight: .bold))
+                    .tracking(1)
+                    .foregroundStyle(Color.white.opacity(0.4))
+                    .padding(.top, 4)
+
+                HStack(spacing: 10) {
+                    Button {
+                        simulateScanningDemoBag(isStarbucks: true)
+                    } label: {
+                        HStack(spacing: 5) {
+                            Image(systemName: "cup.and.saucer.fill")
+                            Text("Starbucks Demo")
+                        }
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(CoffeeTheme.accentWarmGold)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 11)
+                        .background(Color.white.opacity(0.08))
+                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                     }
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(CoffeeTheme.accentWarmGold)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 13)
-                    .background(Color.white.opacity(0.12))
-                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    .buttonStyle(.plain)
+
+                    Button {
+                        simulateScanningDemoBag(isStarbucks: false)
+                    } label: {
+                        HStack(spacing: 5) {
+                            Image(systemName: "sparkles")
+                            Text("Onyx Demo")
+                        }
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(CoffeeTheme.accentWarmGold)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 11)
+                        .background(Color.white.opacity(0.08))
+                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    }
+                    .buttonStyle(.plain)
                 }
-                .buttonStyle(.plain)
             }
         }
     }
 
     // MARK: - Scanned Result Card
-    private func scannedResultCard(_ result: ScannedCoffeeBagData) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                HStack(spacing: 5) {
-                    Image(systemName: "checkmark.seal.fill")
-                        .font(.caption.weight(.bold))
-                        .foregroundStyle(CoffeeTheme.accentWarmGold)
-                    Text("VISION DETECTED")
-                        .font(.system(size: 10, weight: .bold))
-                        .tracking(1)
-                        .foregroundStyle(CoffeeTheme.accentWarmGold)
-                }
+    private var scannedResultCard: some View {
+        guard let result = scannedData else { return AnyView(EmptyView()) }
 
-                Spacer()
-
-                Button {
-                    withAnimation {
-                        scannedData = nil
-                        didSaveSuccess = false
+        return AnyView(
+            VStack(alignment: .leading, spacing: 14) {
+                // Header badge + Retake
+                HStack {
+                    HStack(spacing: 5) {
+                        Image(systemName: "checkmark.seal.fill")
+                            .font(.caption.weight(.bold))
+                            .foregroundStyle(CoffeeTheme.accentSuccess)
+                        Text("APPLE VISION PARSED")
+                            .font(.system(size: 10, weight: .bold))
+                            .tracking(1)
+                            .foregroundStyle(CoffeeTheme.accentSuccess)
                     }
-                } label: {
-                    Text("Retake")
+
+                    Spacer()
+
+                    Button {
+                        withAnimation {
+                            scannedData = nil
+                            scannedImage = nil
+                            didSaveSuccess = false
+                            showRawText = false
+                        }
+                    } label: {
+                        HStack(spacing: 4) {
+                            Image(systemName: "arrow.counterclockwise")
+                            Text("Retake")
+                        }
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(Color.white.opacity(0.7))
+                    }
                 }
-            }
 
-            VStack(alignment: .leading, spacing: 2) {
-                Text(result.roaster.uppercased())
-                    .font(.system(size: 10, weight: .bold))
-                    .tracking(1)
-                    .foregroundStyle(Color.white.opacity(0.6))
+                // Bag Photo Thumbnail + Editable Title & Roaster
+                HStack(alignment: .top, spacing: 12) {
+                    if let img = scannedImage {
+                        Image(uiImage: img)
+                            .resizable()
+                            .scaledToFill()
+                            .frame(width: 58, height: 58)
+                            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                            .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.white.opacity(0.2), lineWidth: 1))
+                    } else {
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                .fill(Color.white.opacity(0.1))
+                                .frame(width: 58, height: 58)
+                            Image(systemName: "cup.and.saucer.fill")
+                                .font(.title3)
+                                .foregroundStyle(CoffeeTheme.accentWarmGold)
+                        }
+                    }
 
-                Text(result.beanName)
-                    .font(.title3.weight(.bold))
+                    VStack(alignment: .leading, spacing: 4) {
+                        TextField("Roaster (e.g. Starbucks, Onyx)", text: $editRoaster)
+                            .font(.caption.weight(.bold))
+                            .foregroundStyle(CoffeeTheme.accentWarmGold)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(Color.white.opacity(0.08))
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
+
+                        TextField("Bean Name (e.g. Pike Place Roast)", text: $editName)
+                            .font(.subheadline.weight(.bold))
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(Color.white.opacity(0.08))
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                    }
+                }
+
+                // Origin, Process, and Elevation
+                HStack(spacing: 8) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("ORIGIN")
+                            .font(.system(size: 9, weight: .bold))
+                            .foregroundStyle(Color.white.opacity(0.5))
+                        TextField("Origin", text: $editOrigin)
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(Color.white.opacity(0.06))
+                            .clipShape(RoundedRectangle(cornerRadius: 6))
+                    }
+                    .frame(maxWidth: .infinity)
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("ROAST")
+                            .font(.system(size: 9, weight: .bold))
+                            .foregroundStyle(Color.white.opacity(0.5))
+                        Picker("Roast", selection: $editRoast) {
+                            Text("Light").tag(RoastLevel.light)
+                            Text("Med").tag(RoastLevel.medium)
+                            Text("Med-Dark").tag(RoastLevel.mediumDark)
+                            Text("Dark").tag(RoastLevel.dark)
+                        }
+                        .pickerStyle(.menu)
+                        .tint(CoffeeTheme.accentWarmGold)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(Color.white.opacity(0.06))
+                        .clipShape(RoundedRectangle(cornerRadius: 6))
+                    }
+                }
+
+                // Flavor Notes Chips
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("TASTING NOTES")
+                        .font(.system(size: 9, weight: .bold))
+                        .foregroundStyle(Color.white.opacity(0.5))
+
+                    FlowLayout(spacing: 6) {
+                        ForEach(editNotes, id: \.self) { note in
+                            Text(note)
+                                .font(.system(size: 11, weight: .semibold))
+                                .foregroundStyle(CoffeeTheme.accentWarmGold)
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 5)
+                                .background(Color.white.opacity(0.1))
+                                .clipShape(Capsule())
+                        }
+                    }
+                }
+
+                // Expandable Raw OCR Text Inspection
+                if !result.rawTextLines.isEmpty {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Button {
+                            withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                                showRawText.toggle()
+                            }
+                        } label: {
+                            HStack(spacing: 6) {
+                                Image(systemName: showRawText ? "chevron.down" : "chevron.right")
+                                    .font(.caption2.weight(.bold))
+                                Text("Vision Extracted Text (\(result.rawTextLines.count) lines)")
+                                    .font(.caption2.weight(.semibold))
+                                Spacer()
+                            }
+                            .foregroundStyle(Color.white.opacity(0.6))
+                        }
+                        .buttonStyle(.plain)
+
+                        if showRawText {
+                            VStack(alignment: .leading, spacing: 3) {
+                                ForEach(Array(result.rawTextLines.enumerated()), id: \.offset) { idx, line in
+                                    Text("\(idx + 1). \(line)")
+                                        .font(.system(size: 10, design: .monospaced))
+                                        .foregroundStyle(Color.white.opacity(0.8))
+                                }
+                            }
+                            .padding(10)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(Color.black.opacity(0.4))
+                            .clipShape(RoundedRectangle(cornerRadius: 10))
+                        }
+                    }
+                    .padding(.top, 4)
+                }
+
+                // Add to Cellar Button
+                Button {
+                    saveEditedToCellar()
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: didSaveSuccess ? "checkmark" : "plus.circle.fill")
+                        Text(didSaveSuccess ? "Saved to Bean Cellar!" : "Save to Bean Cellar")
+                    }
+                    .font(.subheadline.weight(.bold))
                     .foregroundStyle(.white)
-
-                Text("\(result.origin) • \(result.process) • \(result.elevationMeters)m")
-                    .font(.caption)
-                    .foregroundStyle(Color.white.opacity(0.8))
-            }
-
-            // Flavor Notes
-            HStack(spacing: 6) {
-                ForEach(result.flavorNotes.prefix(3), id: \.self) { note in
-                    Text(note)
-                        .font(.system(size: 10, weight: .semibold))
-                        .foregroundStyle(CoffeeTheme.accentWarmGold)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(Color.white.opacity(0.1))
-                        .clipShape(Capsule())
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 14)
+                    .background(didSaveSuccess ? CoffeeTheme.accentSuccess : CoffeeTheme.accentPrimary)
+                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                 }
-                Spacer()
+                .buttonStyle(.plain)
+                .disabled(didSaveSuccess)
             }
-
-            // Add to Cellar Button
-            Button {
-                saveToCellar(result)
-            } label: {
-                HStack(spacing: 6) {
-                    Image(systemName: didSaveSuccess ? "checkmark" : "plus.circle.fill")
-                    Text(didSaveSuccess ? "Saved to Bean Cellar!" : "Add Bag to Cellar")
-                }
-                .font(.subheadline.weight(.bold))
-                .foregroundStyle(.white)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 14)
-                .background(didSaveSuccess ? CoffeeTheme.accentSuccess : CoffeeTheme.accentPrimary)
-                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-            }
-            .buttonStyle(.plain)
-            .disabled(didSaveSuccess)
-        }
-        .padding(18)
-        .background(Color(red: 0.14, green: 0.12, blue: 0.10))
-        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .stroke(CoffeeTheme.accentWarmGold.opacity(0.4), lineWidth: 1)
+            .padding(18)
+            .background(Color(red: 0.14, green: 0.12, blue: 0.10))
+            .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                    .stroke(CoffeeTheme.accentWarmGold.opacity(0.4), lineWidth: 1)
+            )
         )
     }
 
@@ -322,31 +493,60 @@ struct CoffeeBagScannerView: View {
     private func processImage(_ image: UIImage) async {
         isScanning = true
         errorMessage = nil
+        scannedImage = image
 
         do {
             let data = try await CoffeeBagVisionScanner.shared.scanImage(image)
             let generator = UINotificationFeedbackGenerator()
             generator.notificationOccurred(.success)
-            withAnimation {
-                scannedData = data
-                isScanning = false
+            await MainActor.run {
+                withAnimation {
+                    populateFields(with: data)
+                    scannedData = data
+                    isScanning = false
+                }
             }
         } catch {
             let generator = UINotificationFeedbackGenerator()
             generator.notificationOccurred(.error)
-            errorMessage = error.localizedDescription
-            isScanning = false
+            await MainActor.run {
+                errorMessage = error.localizedDescription
+                isScanning = false
+            }
         }
     }
 
-    private func simulateScanningDemoBag() {
+    private func simulateScanningDemoBag(isStarbucks: Bool) {
         isScanning = true
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
+        errorMessage = nil
+        scannedImage = nil
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
             let generator = UINotificationFeedbackGenerator()
             generator.notificationOccurred(.success)
 
-            withAnimation {
-                scannedData = ScannedCoffeeBagData(
+            let demo: ScannedCoffeeBagData
+            if isStarbucks {
+                demo = ScannedCoffeeBagData(
+                    beanName: "Pike Place Roast",
+                    roaster: "Starbucks",
+                    origin: "Latin America",
+                    elevationMeters: 1450,
+                    process: "Washed & Natural Blend",
+                    roastLevel: .medium,
+                    flavorNotes: ["Chocolate", "Toasted Nut", "Smooth Caramel"],
+                    roastDate: Calendar.current.date(byAdding: .day, value: -14, to: Date()) ?? Date(),
+                    rawTextLines: [
+                        "STARBUCKS",
+                        "PIKE PLACE ROAST",
+                        "WHOLE BEAN 100% ARABICA",
+                        "MEDIUM ROAST",
+                        "SMOOTH WITH CHOCOLATE & TOASTED NUT NOTES",
+                        "LATIN AMERICA"
+                    ]
+                )
+            } else {
+                demo = ScannedCoffeeBagData(
                     beanName: "Yirgacheffe Idido G1",
                     roaster: "Onyx Coffee Lab",
                     origin: "Ethiopia",
@@ -355,23 +555,45 @@ struct CoffeeBagScannerView: View {
                     roastLevel: .light,
                     flavorNotes: ["Jasmine", "Bergamot", "Peach"],
                     roastDate: Calendar.current.date(byAdding: .day, value: -8, to: Date()) ?? Date(),
-                    rawTextLines: ["Onyx Coffee Lab", "Ethiopia Yirgacheffe Idido G1", "Natural Anaerobic", "2150 masl", "Roasted on Oct 14"]
+                    rawTextLines: [
+                        "ONYX COFFEE LAB",
+                        "ETHIOPIA YIRGACHEFFE IDIDO",
+                        "GRADE 1 NATURAL ANAEROBIC",
+                        "2150 MASL",
+                        "JASMINE, BERGAMOT, PEACH",
+                        "ROAST DATE OCT 14"
+                    ]
                 )
+            }
+
+            withAnimation {
+                populateFields(with: demo)
+                scannedData = demo
                 isScanning = false
             }
         }
     }
 
-    private func saveToCellar(_ data: ScannedCoffeeBagData) {
+    private func populateFields(with data: ScannedCoffeeBagData) {
+        editName = data.beanName
+        editRoaster = data.roaster
+        editOrigin = data.origin
+        editProcess = data.process
+        editElevation = data.elevationMeters
+        editRoast = data.roastLevel
+        editNotes = data.flavorNotes
+    }
+
+    private func saveEditedToCellar() {
         let bean = CoffeeBeanEntity(
-            name: data.beanName,
-            roaster: data.roaster,
-            origin: data.origin,
-            elevationMeters: data.elevationMeters,
-            processRaw: data.process,
-            roastLevel: data.roastLevel,
-            flavorNotes: data.flavorNotes,
-            roastDate: data.roastDate,
+            name: editName.isEmpty ? "Specialty Coffee" : editName,
+            roaster: editRoaster.isEmpty ? "Artisanal Roaster" : editRoaster,
+            origin: editOrigin.isEmpty ? "Single Origin" : editOrigin,
+            elevationMeters: editElevation,
+            processRaw: editProcess.isEmpty ? "Washed" : editProcess,
+            roastLevel: editRoast,
+            flavorNotes: editNotes,
+            roastDate: scannedData?.roastDate ?? Date(),
             remainingGrams: 250.0,
             isFavorite: true
         )
