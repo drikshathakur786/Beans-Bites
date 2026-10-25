@@ -81,7 +81,7 @@ struct HomeScreenView: View {
                     }
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
-                    .background(Color(uiColor: .tertiarySystemGroupedBackground))
+                    .background(CoffeeTheme.cardAlt)
                     .clipShape(Capsule())
 
                     // Profile Button

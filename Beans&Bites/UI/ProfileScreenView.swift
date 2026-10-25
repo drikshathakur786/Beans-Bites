@@ -171,13 +171,13 @@ struct ProfileScreenView: View {
             Spacer()
         }
         .padding(16)
-        .background(Color(uiColor: .secondarySystemGroupedBackground))
+        .background(CoffeeTheme.card)
         .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .stroke(Color(uiColor: .separator).opacity(0.3), lineWidth: 0.5)
+                .stroke(CoffeeTheme.border, lineWidth: 0.8)
         )
-        .shadow(color: Color.black.opacity(0.03), radius: 4, x: 0, y: 2)
+        .shadow(color: CoffeeTheme.shadow, radius: 6, x: 0, y: 2)
     }
 
     // MARK: - Metrics Strip
@@ -205,11 +205,11 @@ struct ProfileScreenView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 12)
-        .background(Color(uiColor: .secondarySystemGroupedBackground))
+        .background(CoffeeTheme.card)
         .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .stroke(Color(uiColor: .separator).opacity(0.3), lineWidth: 0.5)
+                .stroke(CoffeeTheme.border, lineWidth: 0.8)
         )
     }
 
@@ -330,11 +330,11 @@ struct ProfileScreenView: View {
                 .foregroundStyle(CoffeeTheme.textTertiary.opacity(0.7))
         }
         .padding(12)
-        .background(Color(uiColor: .secondarySystemGroupedBackground))
+        .background(CoffeeTheme.card)
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .stroke(Color(uiColor: .separator).opacity(0.3), lineWidth: 0.5)
+                .stroke(CoffeeTheme.border, lineWidth: 0.8)
         )
     }
 
@@ -380,11 +380,11 @@ struct ProfileScreenView: View {
             .buttonStyle(PlainButtonStyle())
         }
         .padding(12)
-        .background(Color(uiColor: .secondarySystemGroupedBackground))
+        .background(CoffeeTheme.card)
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .stroke(Color(uiColor: .separator).opacity(0.3), lineWidth: 0.5)
+                .stroke(CoffeeTheme.border, lineWidth: 0.8)
         )
     }
 
@@ -426,11 +426,11 @@ struct ProfileScreenView: View {
             }
         }
         .padding(12)
-        .background(Color(uiColor: .secondarySystemGroupedBackground))
+        .background(CoffeeTheme.card)
         .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .stroke(Color(uiColor: .separator).opacity(0.3), lineWidth: 0.5)
+                .stroke(CoffeeTheme.border, lineWidth: 0.8)
         )
     }
 
@@ -458,7 +458,7 @@ struct ProfileScreenView: View {
                 .foregroundStyle(CoffeeTheme.accentPrimary)
         }
         .padding(14)
-        .background(Color(uiColor: .secondarySystemGroupedBackground))
+        .background(CoffeeTheme.card)
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
@@ -506,11 +506,11 @@ struct ProfileScreenView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 32)
-        .background(Color(uiColor: .secondarySystemGroupedBackground))
+        .background(CoffeeTheme.card)
         .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .stroke(Color(uiColor: .separator).opacity(0.3), lineWidth: 0.5)
+                .stroke(CoffeeTheme.border, lineWidth: 0.8)
         )
     }
 
@@ -532,11 +532,11 @@ struct ProfileScreenView: View {
             }
             .buttonStyle(PressableBounceButtonStyle())
         }
-        .background(Color(uiColor: .secondarySystemGroupedBackground))
+        .background(CoffeeTheme.card)
         .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .stroke(Color(uiColor: .separator).opacity(0.3), lineWidth: 0.5)
+                .stroke(Color.red.opacity(0.2), lineWidth: 0.8)
         )
         .padding(.top, 10)
     }
@@ -545,7 +545,7 @@ struct ProfileScreenView: View {
     private func avatarView(size: CGFloat) -> some View {
         let image = loadAvatarImage(named: profile.user.avatarName)
         Circle()
-            .fill(Color(uiColor: .tertiarySystemGroupedBackground))
+            .fill(CoffeeTheme.cardAlt)
             .frame(width: size, height: size)
             .overlay(
                 Circle()

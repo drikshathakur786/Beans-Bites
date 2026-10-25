@@ -7,33 +7,61 @@ import SwiftUI
 import UIKit
 
 struct CoffeeTheme {
-    // Dynamic Apple Canvas: adapts cleanly between Light and Dark mode
-    static let bgPrimary = Color(uiColor: .systemGroupedBackground)
-    static let bgSecondary = Color(uiColor: .secondarySystemGroupedBackground)
-    
-    // Apple Inset Grouped Card Surfaces
-    static let card = Color(uiColor: .secondarySystemGroupedBackground)
-    static let cardAlt = Color(uiColor: .tertiarySystemGroupedBackground)
-    static let cardElevated = Color(uiColor: .secondarySystemGroupedBackground)
+    // Warm Cafe Palette (Inspired by artisanal specialty coffee aesthetics)
+    // Dynamic light/dark support: warm creamy oat in light mode, rich deep espresso in dark mode
+    static let bgPrimary = Color(uiColor: UIColor { trait in
+        trait.userInterfaceStyle == .dark ? UIColor(Color(hex: "18110B")) : UIColor(Color(hex: "F7F2EB"))
+    })
+
+    static let bgSecondary = Color(uiColor: UIColor { trait in
+        trait.userInterfaceStyle == .dark ? UIColor(Color(hex: "231911")) : UIColor(Color(hex: "EFE5D8"))
+    })
+
+    // Warm Inset Card Surfaces (Ivory Cream on Warm Oat)
+    static let card = Color(uiColor: UIColor { trait in
+        trait.userInterfaceStyle == .dark ? UIColor(Color(hex: "241A13")) : UIColor(Color(hex: "FAF6F0"))
+    })
+
+    static let cardAlt = Color(uiColor: UIColor { trait in
+        trait.userInterfaceStyle == .dark ? UIColor(Color(hex: "2E2118")) : UIColor(Color(hex: "EFE4D6"))
+    })
+
+    static let cardElevated = Color(uiColor: UIColor { trait in
+        trait.userInterfaceStyle == .dark ? UIColor(Color(hex: "291D15")) : UIColor.white
+    })
 
     // Curated Artisanal Specialty Accents
-    static let accentPrimary = Color(hex: "C26D28")     // Warm Roasted Amber
-    static let accentSecondary = Color(hex: "4A2E1B")   // Deep Espresso Bronze
+    static let accentPrimary = Color(hex: "B95D24")     // Warm Roasted Amber Terracotta
+    static let accentSecondary = Color(hex: "2A170D")   // Deep Espresso Bronze
     static let accentWarmGold = Color(hex: "D98A36")    // Golden Crema
-    static let accentMuted = Color(hex: "F2E7DA")       // Frosted Latte Cream
-    static let accentSuccess = Color(hex: "34A853")     // Mint Extraction Green
+    static let accentMuted = Color(hex: "F3E7D8")       // Frosted Latte Cream
+    static let accentSuccess = Color(hex: "3C8F4E")     // Balanced Extraction Green
 
-    // Native Typography Scale (SF Pro hierarchy)
-    static let textPrimary = Color(uiColor: .label)
-    static let textSecondary = Color(uiColor: .secondaryLabel)
-    static let textTertiary = Color(uiColor: .tertiaryLabel)
+    // Warm Espresso Typography Scale
+    static let textPrimary = Color(uiColor: UIColor { trait in
+        trait.userInterfaceStyle == .dark ? UIColor.white : UIColor(Color(hex: "26150A"))
+    })
 
-    // Native Apple Borders & Precision Hairlines
-    static let border = Color.primary.opacity(0.08)
-    static let borderSubtle = Color.primary.opacity(0.05)
-    static let shadow = Color.black.opacity(0.05)
-    static let shadowSubtle = Color.black.opacity(0.03)
-    static let shadowElevated = Color.black.opacity(0.08)
+    static let textSecondary = Color(uiColor: UIColor { trait in
+        trait.userInterfaceStyle == .dark ? UIColor(white: 0.78, alpha: 1) : UIColor(Color(hex: "705847"))
+    })
+
+    static let textTertiary = Color(uiColor: UIColor { trait in
+        trait.userInterfaceStyle == .dark ? UIColor(white: 0.55, alpha: 1) : UIColor(Color(hex: "9F8978"))
+    })
+
+    // Warm Borders & Hairlines
+    static let border = Color(uiColor: UIColor { trait in
+        trait.userInterfaceStyle == .dark ? UIColor(white: 1, alpha: 0.1) : UIColor(Color(hex: "E6D9C8"))
+    })
+
+    static let borderSubtle = Color(uiColor: UIColor { trait in
+        trait.userInterfaceStyle == .dark ? UIColor(white: 1, alpha: 0.06) : UIColor(Color(hex: "EFE4D4"))
+    })
+
+    static let shadow = Color(hex: "26150A").opacity(0.06)
+    static let shadowSubtle = Color(hex: "26150A").opacity(0.03)
+    static let shadowElevated = Color(hex: "26150A").opacity(0.10)
 }
 
 // MARK: - Color Hex Initializer
@@ -66,7 +94,7 @@ extension Color {
 
 // MARK: - Native Apple Glass & Elevation Modifiers
 extension View {
-    /// Apple Inset Grouped Card with subtle hairline border and native shadow
+    /// Apple Inset Grouped Card with warm artisanal borders
     func coffeeCard(cornerRadius: CGFloat = 20) -> some View {
         self
             .background(CoffeeTheme.card)
@@ -75,18 +103,18 @@ extension View {
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                     .stroke(CoffeeTheme.border, lineWidth: 0.8)
             )
-            .shadow(color: CoffeeTheme.shadow, radius: 10, x: 0, y: 3)
+            .shadow(color: CoffeeTheme.shadow, radius: 8, x: 0, y: 3)
     }
 
-    /// Apple Translucent Frosted Glass Card (Glassmorphism)
+    /// Apple Translucent Frosted Glass Card
     func glassCard(cornerRadius: CGFloat = 20) -> some View {
         self
             .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                    .stroke(Color.white.opacity(0.25), lineWidth: 0.8)
+                    .stroke(Color.white.opacity(0.3), lineWidth: 0.8)
             )
-            .shadow(color: Color.black.opacity(0.06), radius: 12, x: 0, y: 4)
+            .shadow(color: CoffeeTheme.shadow, radius: 10, x: 0, y: 4)
     }
 
     /// Secondary Inset Card

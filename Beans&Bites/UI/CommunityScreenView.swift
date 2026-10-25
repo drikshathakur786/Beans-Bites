@@ -115,13 +115,13 @@ struct CommunityScreenView: View {
                     }
                 }
             }
-            .background(Color(uiColor: .secondarySystemGroupedBackground))
+            .background(CoffeeTheme.card)
             .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .stroke(Color(uiColor: .separator).opacity(0.3), lineWidth: 0.5)
+                    .stroke(CoffeeTheme.border, lineWidth: 0.8)
             )
-            .shadow(color: Color.black.opacity(0.03), radius: 4, x: 0, y: 2)
+            .shadow(color: CoffeeTheme.shadow, radius: 6, x: 0, y: 2)
         }
     }
 
@@ -447,11 +447,11 @@ private struct RoomChatView: View {
                             .foregroundStyle(CoffeeTheme.textSecondary)
                     }
                     .padding(14)
-                    .background(Color(uiColor: .secondarySystemGroupedBackground))
+                    .background(CoffeeTheme.card)
                     .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
                     .overlay(
                         RoundedRectangle(cornerRadius: 16, style: .continuous)
-                            .stroke(Color(uiColor: .separator).opacity(0.3), lineWidth: 0.5)
+                            .stroke(CoffeeTheme.border, lineWidth: 0.8)
                     )
 
                     // Messages Stream
@@ -509,14 +509,14 @@ private struct RoomChatView: View {
                     .background(
                         message.isCurrentUser ?
                             CoffeeTheme.accentPrimary :
-                            Color(uiColor: .secondarySystemGroupedBackground)
+                            CoffeeTheme.card
                     )
                     .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
                     .overlay(
                         RoundedRectangle(cornerRadius: 16, style: .continuous)
                             .stroke(
-                                message.isCurrentUser ? Color.clear : Color(uiColor: .separator).opacity(0.3),
-                                lineWidth: 0.5
+                                message.isCurrentUser ? Color.clear : CoffeeTheme.border,
+                                lineWidth: 0.8
                             )
                     )
 
@@ -530,7 +530,7 @@ private struct RoomChatView: View {
                     .foregroundStyle(CoffeeTheme.accentPrimary)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 4)
-                    .background(Color(uiColor: .tertiarySystemGroupedBackground))
+                    .background(CoffeeTheme.cardAlt)
                     .clipShape(Capsule())
                 }
             }
@@ -545,11 +545,11 @@ private struct RoomChatView: View {
                 .font(.subheadline)
                 .padding(.horizontal, 14)
                 .padding(.vertical, 10)
-                .background(Color(uiColor: .secondarySystemGroupedBackground))
+                .background(CoffeeTheme.card)
                 .clipShape(Capsule())
                 .overlay(
                     Capsule()
-                        .stroke(Color(uiColor: .separator).opacity(0.4), lineWidth: 0.5)
+                        .stroke(CoffeeTheme.border, lineWidth: 0.8)
                 )
 
             Button {

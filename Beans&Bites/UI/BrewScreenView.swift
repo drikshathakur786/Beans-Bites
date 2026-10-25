@@ -148,14 +148,14 @@ struct BrewScreenView: View {
                         .background(
                             isSelected ?
                                 CoffeeTheme.accentPrimary :
-                                Color(uiColor: .secondarySystemGroupedBackground)
+                                CoffeeTheme.cardAlt
                         )
                         .clipShape(Capsule())
                         .overlay(
                             Capsule()
                                 .stroke(
-                                    isSelected ? Color.clear : Color(uiColor: .separator).opacity(0.3),
-                                    lineWidth: 0.5
+                                    isSelected ? Color.clear : CoffeeTheme.border,
+                                    lineWidth: 0.8
                                 )
                         )
                     }
@@ -285,11 +285,11 @@ struct BrewScreenView: View {
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 40)
-                .background(Color(uiColor: .secondarySystemGroupedBackground))
+                .background(CoffeeTheme.card)
                 .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
                 .overlay(
                     RoundedRectangle(cornerRadius: 20, style: .continuous)
-                        .stroke(Color(uiColor: .separator).opacity(0.3), lineWidth: 0.5)
+                        .stroke(CoffeeTheme.border, lineWidth: 0.8)
                 )
             } else {
                 let columns = [
@@ -384,13 +384,13 @@ struct BrewScreenView: View {
             .padding(.top, 2)
         }
         .padding(14)
-        .background(Color(uiColor: .secondarySystemGroupedBackground))
+        .background(CoffeeTheme.card)
         .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .stroke(Color(uiColor: .separator).opacity(0.3), lineWidth: 0.5)
+                .stroke(CoffeeTheme.border, lineWidth: 0.8)
         )
-        .shadow(color: Color.black.opacity(0.04), radius: 4, x: 0, y: 2)
+        .shadow(color: CoffeeTheme.shadow, radius: 6, x: 0, y: 2)
     }
 
     private func methodIcon(for method: BrewMethod) -> String {
