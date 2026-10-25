@@ -6,13 +6,21 @@
 import SwiftUI
 import UIKit
 
+enum CommunityMainTab: String, CaseIterable {
+    case feed = "Rituals & Feed"
+    case channels = "Channels"
+}
+
 struct CommunityScreenView: View {
     @ObservedObject private var store = AppDataStore.shared
 
+    @State private var activeTab: CommunityMainTab = .feed
     @State private var searchQuery: String = ""
     @State private var rooms: [CommunityRoom] = []
     @State private var showCreateCommunity = false
+    @State private var showShareRecipe = false
     @State private var joinedRoomIDs: Set<UUID> = []
+    @State private var roomMessages: [UUID: [CommunityMessage]] = [:]
 
     private var filteredOfficialRooms: [CommunityRoom] {
         filterRooms(rooms.filter { $0.kind == .official && !joinedRoomIDs.contains($0.id) })
@@ -29,14 +37,15 @@ struct CommunityScreenView: View {
     var body: some View {
         NavigationStack {
             ScrollView(showsIndicators: false) {
-                VStack(alignment: .leading, spacing: 24) {
-                    if !joinedRooms.isEmpty {
-                        channelSection(title: "MY CHANNELS", rooms: joinedRooms, isJoinedSection: true)
+                VStack(alignment: .leading, spacing: 18) {
+                    // Top Segmented Mode Selector
+                    segmentedTabPicker
+
+                    if activeTab == .feed {
+                        communityFeedSection
+                    } else {
+                        channelsSection
                     }
-
-                    channelSection(title: "OFFICIAL CHANNELS", rooms: filteredOfficialRooms)
-
-                    channelSection(title: "COMMUNITY CHANNELS", rooms: filteredCommunityRooms)
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 12)
@@ -45,27 +54,41 @@ struct CommunityScreenView: View {
             .background(CoffeeTheme.bgPrimary.ignoresSafeArea())
             .navigationTitle("Community")
             .navigationBarTitleDisplayMode(.large)
-            .searchable(
-                text: $searchQuery,
-                placement: .automatic,
-                prompt: "Search channels and discussions..."
-            )
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        let generator = UIImpactFeedbackGenerator(style: .medium)
-                        generator.impactOccurred()
-                        showCreateCommunity = true
-                    } label: {
-                        Image(systemName: "plus")
-                            .font(.system(size: 16, weight: .bold))
+                    if activeTab == .channels {
+                        Button {
+                            let generator = UIImpactFeedbackGenerator(style: .medium)
+                            generator.impactOccurred()
+                            showCreateCommunity = true
+                        } label: {
+                            Image(systemName: "plus")
+                                .font(.system(size: 16, weight: .bold))
+                                .foregroundStyle(CoffeeTheme.accentPrimary)
+                        }
+                        .accessibilityLabel("Create channel")
+                    } else {
+                        Button {
+                            let generator = UIImpactFeedbackGenerator(style: .medium)
+                            generator.impactOccurred()
+                            showShareRecipe = true
+                        } label: {
+                            HStack(spacing: 4) {
+                                Image(systemName: "plus.circle.fill")
+                                Text("Share")
+                                    .font(.subheadline.weight(.semibold))
+                            }
                             .foregroundStyle(CoffeeTheme.accentPrimary)
+                        }
                     }
-                    .accessibilityLabel("Create channel")
                 }
             }
             .navigationDestination(for: CommunityRoom.self) { room in
-                RoomChatView(room: room, isJoined: joinedBinding(for: room))
+                RoomChatView(
+                    room: room,
+                    isJoined: joinedBinding(for: room),
+                    messages: messagesBinding(for: room)
+                )
             }
             .sheet(isPresented: $showCreateCommunity) {
                 CreateCommunityRoomView { request in
@@ -74,11 +97,369 @@ struct CommunityScreenView: View {
                 .presentationDetents([.large])
                 .presentationCornerRadius(32)
             }
+            .sheet(isPresented: $showShareRecipe) {
+                CreateRecipeFlowView()
+                    .presentationDetents([.large])
+                    .presentationCornerRadius(32)
+            }
             .onAppear {
                 if rooms.isEmpty {
-                    rooms = makeSeedRooms()
+                    let seed = makeSeedRooms()
+                    rooms = seed
+                    for room in seed {
+                        roomMessages[room.id] = room.messages
+                    }
                 }
             }
+        }
+    }
+
+    // MARK: - Segmented Tab Selector
+    private var segmentedTabPicker: some View {
+        Picker("Community View", selection: $activeTab) {
+            ForEach(CommunityMainTab.allCases, id: \.self) { tab in
+                Text(tab.rawValue).tag(tab)
+            }
+        }
+        .pickerStyle(.segmented)
+        .padding(.vertical, 4)
+    }
+
+    // MARK: - Community Feed Section
+    private var communityFeedSection: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            // Share Callout Banner
+            shareBannerCard
+
+            // Feed Posts
+            if store.communityPosts.isEmpty {
+                emptyFeedState
+            } else {
+                LazyVStack(spacing: 16) {
+                    ForEach(store.communityPosts) { post in
+                        communityPostCard(post)
+                    }
+                }
+            }
+        }
+    }
+
+    private var shareBannerCard: some View {
+        HStack(spacing: 14) {
+            ZStack {
+                Circle()
+                    .fill(CoffeeTheme.accentPrimary.opacity(0.14))
+                    .frame(width: 44, height: 44)
+                Image(systemName: "cup.and.saucer.fill")
+                    .font(.system(size: 18, weight: .bold))
+                    .foregroundStyle(CoffeeTheme.accentPrimary)
+            }
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text("Share Your Extraction")
+                    .font(.subheadline.weight(.bold))
+                    .foregroundStyle(CoffeeTheme.textPrimary)
+                Text("Publish recipes & food pairings from @\(cleanUsername(store.profile.user.username))")
+                    .font(.caption)
+                    .foregroundStyle(CoffeeTheme.textSecondary)
+                    .lineLimit(1)
+            }
+
+            Spacer()
+
+            Button {
+                showShareRecipe = true
+            } label: {
+                Text("Post")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 8)
+                    .background(CoffeeTheme.accentPrimary)
+                    .clipShape(Capsule())
+            }
+            .buttonStyle(PressableBounceButtonStyle())
+        }
+        .padding(14)
+        .background(CoffeeTheme.card)
+        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(CoffeeTheme.accentPrimary.opacity(0.25), lineWidth: 1)
+        )
+    }
+
+    private func communityPostCard(_ post: CommunityPost) -> some View {
+        let isMyPost = post.author.id == store.profile.user.id ||
+            cleanUsername(post.author.username).lowercased() == cleanUsername(store.profile.user.username).lowercased()
+
+        return VStack(alignment: .leading, spacing: 12) {
+            // Header Author Strip
+            HStack(spacing: 10) {
+                authorAvatar(named: isMyPost ? store.profile.user.avatarName : post.author.avatarName, size: 40)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack(spacing: 6) {
+                        Text(isMyPost ? store.profile.user.displayName : post.author.displayName)
+                            .font(.subheadline.weight(.bold))
+                            .foregroundStyle(CoffeeTheme.textPrimary)
+
+                        if isMyPost {
+                            Text("YOU")
+                                .font(.system(size: 9, weight: .bold))
+                                .foregroundStyle(CoffeeTheme.accentWarmGold)
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 2)
+                                .background(CoffeeTheme.accentWarmGold.opacity(0.15))
+                                .clipShape(Capsule())
+                        }
+                    }
+
+                    HStack(spacing: 6) {
+                        Text(isMyPost ? store.profile.user.username : post.author.username)
+                            .font(.caption2)
+                            .foregroundStyle(CoffeeTheme.accentPrimary)
+
+                        Text("•")
+                            .font(.caption2)
+                            .foregroundStyle(CoffeeTheme.textTertiary)
+
+                        Text(timeAgo(from: post.createdAt))
+                            .font(.caption2)
+                            .foregroundStyle(CoffeeTheme.textTertiary)
+                    }
+                }
+
+                Spacer()
+
+                // Method Pill Badge
+                Text(post.ritual.method.rawValue.capitalized)
+                    .font(.caption2.weight(.bold))
+                    .foregroundStyle(CoffeeTheme.accentPrimary)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 4)
+                    .background(CoffeeTheme.accentPrimary.opacity(0.12))
+                    .clipShape(Capsule())
+            }
+
+            // Recipe Photo & Title Box
+            VStack(alignment: .leading, spacing: 8) {
+                ZStack(alignment: .bottomLeading) {
+                    recipeImageView(named: post.ritual.imageName)
+                        .frame(height: 180)
+                        .frame(maxWidth: .infinity)
+                        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+
+                    LinearGradient(
+                        colors: [Color.clear, Color.black.opacity(0.75)],
+                        startPoint: .center,
+                        endPoint: .bottom
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(post.ritual.title)
+                            .font(.headline.weight(.bold))
+                            .foregroundStyle(.white)
+                            .shadow(color: Color.black.opacity(0.4), radius: 4, x: 0, y: 2)
+
+                        Text("\(post.ritual.bean.origin) • \(post.ritual.roast.rawValue.capitalized) Roast")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(Color.white.opacity(0.9))
+                    }
+                    .padding(12)
+                }
+
+                // Food Pairing Pill if present
+                if let pairing = post.ritual.pairing {
+                    HStack(spacing: 6) {
+                        Image(systemName: "fork.knife")
+                            .font(.system(size: 11, weight: .bold))
+                            .foregroundStyle(CoffeeTheme.accentWarmGold)
+
+                        Text("Paired with:")
+                            .font(.caption2.weight(.medium))
+                            .foregroundStyle(CoffeeTheme.textSecondary)
+
+                        Text(pairing.name)
+                            .font(.caption2.weight(.bold))
+                            .foregroundStyle(CoffeeTheme.textPrimary)
+                    }
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 5)
+                    .background(CoffeeTheme.cardAlt)
+                    .clipShape(Capsule())
+                }
+
+                // Metrics Strip
+                HStack(spacing: 12) {
+                    metricItem(icon: "scalemass.fill", text: "\(Int(post.ritual.metrics.doseGrams))g")
+                    metricItem(icon: "drop.fill", text: "\(post.ritual.metrics.waterMilliliters)ml")
+                    metricItem(icon: "thermometer.medium", text: "\(post.ritual.metrics.temperatureCelsius)°C")
+                    metricItem(icon: "timer", text: post.ritual.totalBrewTimeText)
+                    Spacer()
+                }
+                .padding(.top, 2)
+
+                // Caption Story
+                if !post.caption.isEmpty {
+                    Text(post.caption)
+                        .font(.subheadline)
+                        .foregroundStyle(CoffeeTheme.textPrimary)
+                        .padding(.top, 2)
+                }
+
+                // Hashtags
+                if !post.hashtags.isEmpty {
+                    Text(post.hashtags.joined(separator: " "))
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(CoffeeTheme.accentPrimary)
+                }
+            }
+
+            Divider()
+                .padding(.vertical, 2)
+
+            // Interaction Bar
+            HStack(spacing: 16) {
+                // Like Button
+                Button {
+                    let generator = UIImpactFeedbackGenerator(style: .light)
+                    generator.impactOccurred()
+                    store.toggleLike(postID: post.id)
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: post.isLikedByCurrentUser ? "heart.fill" : "heart")
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundStyle(post.isLikedByCurrentUser ? Color.red : CoffeeTheme.textSecondary)
+                        Text("\(post.likesCount)")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(post.isLikedByCurrentUser ? Color.red : CoffeeTheme.textSecondary)
+                    }
+                }
+                .buttonStyle(PlainButtonStyle())
+
+                // Comments Counter
+                HStack(spacing: 6) {
+                    Image(systemName: "bubble.left")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(CoffeeTheme.textSecondary)
+                    Text("\(post.commentsCount)")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(CoffeeTheme.textSecondary)
+                }
+
+                Spacer()
+
+                // Brew This Button
+                NavigationLink(destination: BrewDetailView(ritualID: post.ritual.id)) {
+                    HStack(spacing: 5) {
+                        Image(systemName: "play.fill")
+                            .font(.system(size: 10, weight: .bold))
+                        Text("Brew Recipe")
+                            .font(.caption.weight(.bold))
+                    }
+                    .foregroundStyle(CoffeeTheme.accentPrimary)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(CoffeeTheme.accentPrimary.opacity(0.12))
+                    .clipShape(Capsule())
+                }
+                .buttonStyle(PressableBounceButtonStyle())
+            }
+        }
+        .padding(16)
+        .background(CoffeeTheme.card)
+        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .stroke(isMyPost ? CoffeeTheme.accentPrimary.opacity(0.35) : CoffeeTheme.border, lineWidth: 1)
+        )
+        .shadow(color: CoffeeTheme.shadow.opacity(0.15), radius: 6, x: 0, y: 3)
+    }
+
+    private func metricItem(icon: String, text: String) -> some View {
+        HStack(spacing: 4) {
+            Image(systemName: icon)
+                .font(.system(size: 10, weight: .bold))
+                .foregroundStyle(CoffeeTheme.accentPrimary)
+            Text(text)
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(CoffeeTheme.textSecondary)
+        }
+    }
+
+    @ViewBuilder
+    private func recipeImageView(named imageName: String) -> some View {
+        if let image = UIImage(named: imageName) {
+            Image(uiImage: image)
+                .resizable()
+                .scaledToFill()
+        } else {
+            ZStack {
+                LinearGradient(
+                    colors: [Color(hex: "3C2415"), Color(hex: "23140C")],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+                VStack(spacing: 8) {
+                    Image(systemName: "cup.and.saucer.fill")
+                        .font(.system(size: 38))
+                        .foregroundStyle(CoffeeTheme.accentWarmGold)
+                    Text("Artisanal Extraction")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(Color.white.opacity(0.8))
+                }
+            }
+        }
+    }
+
+    private var emptyFeedState: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "cup.and.saucer")
+                .font(.system(size: 38))
+                .foregroundStyle(CoffeeTheme.textTertiary)
+                .padding(.top, 12)
+
+            Text("No Community Rituals Yet")
+                .font(.headline)
+                .foregroundStyle(CoffeeTheme.textPrimary)
+
+            Text("Be the first to share an extraction recipe and food pairing with the community.")
+                .font(.subheadline)
+                .foregroundStyle(CoffeeTheme.textSecondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 24)
+
+            Button("Share a Recipe") {
+                showShareRecipe = true
+            }
+            .font(.subheadline.weight(.bold))
+            .foregroundStyle(.white)
+            .padding(.horizontal, 18)
+            .padding(.vertical, 10)
+            .background(CoffeeTheme.accentPrimary)
+            .clipShape(Capsule())
+            .padding(.top, 4)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 36)
+        .background(CoffeeTheme.card)
+        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+    }
+
+    // MARK: - Channels Section
+    private var channelsSection: some View {
+        VStack(alignment: .leading, spacing: 20) {
+            LiquidGlassSearchBar(text: $searchQuery, placeholder: "Search channels and discussions...")
+
+            if !joinedRooms.isEmpty {
+                channelSection(title: "MY CHANNELS", rooms: joinedRooms, isJoinedSection: true)
+            }
+
+            channelSection(title: "OFFICIAL CHANNELS", rooms: filteredOfficialRooms)
+
+            channelSection(title: "COMMUNITY CHANNELS", rooms: filteredCommunityRooms)
         }
     }
 
@@ -128,7 +509,6 @@ struct CommunityScreenView: View {
     // MARK: - Channel Row
     private func channelRow(_ room: CommunityRoom, isJoined: Bool) -> some View {
         HStack(spacing: 14) {
-            // Icon Badge
             ZStack {
                 Circle()
                     .fill(CoffeeTheme.accentPrimary.opacity(0.12))
@@ -139,7 +519,6 @@ struct CommunityScreenView: View {
                     .foregroundStyle(CoffeeTheme.accentPrimary)
             }
 
-            // Info
             VStack(alignment: .leading, spacing: 3) {
                 HStack(spacing: 6) {
                     Text(room.title)
@@ -166,7 +545,6 @@ struct CommunityScreenView: View {
 
             Spacer(minLength: 8)
 
-            // Right side stats & unread indicator
             HStack(spacing: 8) {
                 if room.unreadCount > 0 {
                     Text("\(room.unreadCount)")
@@ -218,8 +596,16 @@ struct CommunityScreenView: View {
         let visibility = request.isPrivate ? "private" : "public"
         let details = request.details.trimmingCharacters(in: .whitespacesAndNewlines)
         let description = details.isEmpty ? "\(request.topic.rawValue) • \(visibility)" : details
+        let roomID = UUID()
+        let initialMessage = CommunityMessage(
+            author: store.profile.user.username.isEmpty ? "@brewer" : store.profile.user.username,
+            text: messageText,
+            ritualLink: nil,
+            isCurrentUser: true,
+            isPinned: true
+        )
         let room = CommunityRoom(
-            id: UUID(),
+            id: roomID,
             title: title,
             description: description,
             icon: request.icon,
@@ -227,16 +613,10 @@ struct CommunityScreenView: View {
             activeNow: 1,
             totalMembers: 24,
             unreadCount: 0,
-            messages: [
-                CommunityMessage(
-                    author: "@system",
-                    text: messageText,
-                    ritualLink: nil,
-                    isCurrentUser: false,
-                    isPinned: true
-                )
-            ]
+            messages: [initialMessage]
         )
+
+        roomMessages[roomID] = [initialMessage]
 
         if let index = rooms.firstIndex(where: { $0.kind == .community }) {
             rooms.insert(room, at: index)
@@ -260,8 +640,8 @@ struct CommunityScreenView: View {
                 totalMembers: 320,
                 unreadCount: 2,
                 messages: [
-                    CommunityMessage(author: "@lina", text: "Morning brew done. Any V60 tweaks for cleaner sweetness?", ritualLink: nil, isCurrentUser: false),
-                    CommunityMessage(author: "@marcus", text: "Try this ritual with a slightly finer grind.", ritualLink: RitualLink(ritualID: featured.id, title: featured.title), isCurrentUser: false)
+                    CommunityMessage(author: "@lina_roaster", text: "Morning brew done. Any V60 tweaks for cleaner sweetness?", ritualLink: nil, isCurrentUser: false),
+                    CommunityMessage(author: "@marcus_brews", text: "Try this ritual with a slightly finer grind and 93°C water.", ritualLink: RitualLink(ritualID: featured.id, title: featured.title), isCurrentUser: false)
                 ]
             ),
             CommunityRoom(
@@ -274,7 +654,7 @@ struct CommunityScreenView: View {
                 totalMembers: 180,
                 unreadCount: 0,
                 messages: [
-                    CommunityMessage(author: "@eliza", text: "Ethiopian washed lots are so expressive this week.", ritualLink: nil, isCurrentUser: false)
+                    CommunityMessage(author: "@eliza_origin", text: "Ethiopian washed lots are expressing vibrant jasmine this season.", ritualLink: nil, isCurrentUser: false)
                 ]
             ),
             CommunityRoom(
@@ -287,7 +667,7 @@ struct CommunityScreenView: View {
                 totalMembers: 210,
                 unreadCount: 1,
                 messages: [
-                    CommunityMessage(author: "@kai", text: "How long are you blooming for light roast anaerobic?", ritualLink: nil, isCurrentUser: false)
+                    CommunityMessage(author: "@kai_cupping", text: "How long are you blooming for light roast anaerobic lots?", ritualLink: nil, isCurrentUser: false)
                 ]
             ),
             CommunityRoom(
@@ -300,8 +680,8 @@ struct CommunityScreenView: View {
                 totalMembers: 340,
                 unreadCount: 4,
                 messages: [
-                    CommunityMessage(author: "@mod", text: "Pinned: Submit your ritual for this month’s contest.", ritualLink: nil, isCurrentUser: false, isPinned: true),
-                    CommunityMessage(author: "@sara_roasts", text: "Submitting mine now.", ritualLink: RitualLink(ritualID: challengeRitual.id, title: challengeRitual.title), isCurrentUser: false)
+                    CommunityMessage(author: "@mod_barista", text: "Pinned: Submit your ritual for this month’s contest.", ritualLink: nil, isCurrentUser: false, isPinned: true),
+                    CommunityMessage(author: "@sara_specialty", text: "Submitting my Kasuya 4:6 ritual now.", ritualLink: RitualLink(ritualID: challengeRitual.id, title: challengeRitual.title), isCurrentUser: false)
                 ]
             )
         ]
@@ -317,20 +697,20 @@ struct CommunityScreenView: View {
                 totalMembers: 95,
                 unreadCount: 0,
                 messages: [
-                    CommunityMessage(author: "@noah", text: "Anyone brewing with 88°C water tonight?", ritualLink: nil, isCurrentUser: false)
+                    CommunityMessage(author: "@noah_craft", text: "Anyone brewing with 88°C water tonight for sweet malic body?", ritualLink: nil, isCurrentUser: false)
                 ]
             ),
             CommunityRoom(
                 id: UUID(),
                 title: "Artisanal Food Pairings",
-                description: "Coffee harmonies with canelés, sourdough & fruit.",
+                description: "Coffee harmonies with croissants, dark chocolate & fruit.",
                 icon: "fork.knife",
                 kind: .community,
                 activeNow: 11,
                 totalMembers: 142,
                 unreadCount: 0,
                 messages: [
-                    CommunityMessage(author: "@you", text: "This combo is unreal.", ritualLink: RitualLink(ritualID: featured.id, title: featured.title), isCurrentUser: true)
+                    CommunityMessage(author: "@elena_pairings", text: "Single-origin pour over paired with warm butter croissant is unbeatable.", ritualLink: RitualLink(ritualID: featured.id, title: featured.title), isCurrentUser: false)
                 ]
             )
         ]
@@ -349,6 +729,48 @@ struct CommunityScreenView: View {
                 }
             }
         )
+    }
+
+    private func messagesBinding(for room: CommunityRoom) -> Binding<[CommunityMessage]> {
+        Binding(
+            get: { roomMessages[room.id] ?? room.messages },
+            set: { roomMessages[room.id] = $0 }
+        )
+    }
+
+    private func cleanUsername(_ raw: String) -> String {
+        raw.replacingOccurrences(of: "@", with: "")
+    }
+
+    private func timeAgo(from date: Date) -> String {
+        let seconds = max(1, Int(Date().timeIntervalSince(date)))
+        let minute = 60
+        let hour = 3600
+        let day = 86400
+        if seconds < minute { return "\(seconds)s ago" }
+        if seconds < hour { return "\(seconds / minute)m ago" }
+        if seconds < day { return "\(seconds / hour)h ago" }
+        return "\(seconds / day)d ago"
+    }
+
+    @ViewBuilder
+    private func authorAvatar(named avatarName: String, size: CGFloat) -> some View {
+        if let image = UIImage(named: avatarName) {
+            Image(uiImage: image)
+                .resizable()
+                .scaledToFill()
+                .frame(width: size, height: size)
+                .clipShape(Circle())
+        } else {
+            Circle()
+                .fill(CoffeeTheme.accentPrimary.opacity(0.18))
+                .frame(width: size, height: size)
+                .overlay(
+                    Image(systemName: "person.crop.circle.fill")
+                        .font(.system(size: size * 0.65))
+                        .foregroundStyle(CoffeeTheme.accentPrimary)
+                )
+        }
     }
 }
 
@@ -396,24 +818,18 @@ private struct CommunityRoom: Identifiable, Codable, Hashable {
     let activeNow: Int
     let totalMembers: Int
     let unreadCount: Int
-    let messages: [CommunityMessage]
+    var messages: [CommunityMessage]
 }
 
 private struct RoomChatView: View {
+    @ObservedObject private var store = AppDataStore.shared
     @Environment(\.dismiss) private var dismiss
 
     let room: CommunityRoom
     @Binding var isJoined: Bool
+    @Binding var messages: [CommunityMessage]
 
-    @State private var messages: [CommunityMessage]
     @State private var draftMessage: String = ""
-    @State private var isJoining: Bool = false
-
-    init(room: CommunityRoom, isJoined: Binding<Bool>) {
-        self.room = room
-        _isJoined = isJoined
-        _messages = State(initialValue: room.messages)
-    }
 
     var body: some View {
         ScrollViewReader { proxy in
@@ -490,12 +906,28 @@ private struct RoomChatView: View {
         }
     }
 
-    private func chatMessageBubble(_ message: CommunityMessage) -> some View {
-        HStack {
-            if message.isCurrentUser { Spacer(minLength: 40) }
+    private func isMessageFromCurrentUser(_ message: CommunityMessage) -> Bool {
+        let currentUsername = store.profile.user.username.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        let currentDisplay = store.profile.user.displayName.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        let author = message.author.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
 
-            VStack(alignment: message.isCurrentUser ? .trailing : .leading, spacing: 4) {
-                if !message.isCurrentUser {
+        if author == currentUsername || author == "@\(currentUsername.replacingOccurrences(of: "@", with: ""))" {
+            return true
+        }
+        if !currentDisplay.isEmpty && author == currentDisplay {
+            return true
+        }
+        return message.isCurrentUser && author == "@you"
+    }
+
+    private func chatMessageBubble(_ message: CommunityMessage) -> some View {
+        let isMine = isMessageFromCurrentUser(message)
+
+        return HStack {
+            if isMine { Spacer(minLength: 40) }
+
+            VStack(alignment: isMine ? .trailing : .leading, spacing: 4) {
+                if !isMine {
                     Text(message.author)
                         .font(.caption2.weight(.bold))
                         .foregroundStyle(CoffeeTheme.textTertiary)
@@ -503,11 +935,11 @@ private struct RoomChatView: View {
 
                 Text(message.text)
                     .font(.subheadline)
-                    .foregroundStyle(message.isCurrentUser ? Color.white : CoffeeTheme.textPrimary)
+                    .foregroundStyle(isMine ? Color.white : CoffeeTheme.textPrimary)
                     .padding(.horizontal, 14)
                     .padding(.vertical, 10)
                     .background(
-                        message.isCurrentUser ?
+                        isMine ?
                             CoffeeTheme.accentPrimary :
                             CoffeeTheme.card
                     )
@@ -515,7 +947,7 @@ private struct RoomChatView: View {
                     .overlay(
                         RoundedRectangle(cornerRadius: 16, style: .continuous)
                             .stroke(
-                                message.isCurrentUser ? Color.clear : CoffeeTheme.border,
+                                isMine ? Color.clear : CoffeeTheme.border,
                                 lineWidth: 0.8
                             )
                     )
@@ -535,7 +967,7 @@ private struct RoomChatView: View {
                 }
             }
 
-            if !message.isCurrentUser { Spacer(minLength: 40) }
+            if !isMine { Spacer(minLength: 40) }
         }
     }
 
@@ -555,8 +987,13 @@ private struct RoomChatView: View {
             Button {
                 let trimmed = draftMessage.trimmingCharacters(in: .whitespacesAndNewlines)
                 guard !trimmed.isEmpty else { return }
+
+                let currentHandle = store.profile.user.username.isEmpty ?
+                    "@\(store.profile.user.displayName.lowercased().replacingOccurrences(of: " ", with: "_"))" :
+                    store.profile.user.username
+
                 let newMsg = CommunityMessage(
-                    author: "@you",
+                    author: currentHandle,
                     text: trimmed,
                     ritualLink: nil,
                     isCurrentUser: true
@@ -603,11 +1040,11 @@ private struct RoomChatView: View {
             .font(.subheadline.weight(.bold))
             .foregroundStyle(.white)
             .padding(.horizontal, 16)
-            .padding(.vertical, 10)
+            .padding(.vertical, 8)
             .background(CoffeeTheme.accentPrimary)
             .clipShape(Capsule())
         }
-        .padding(.horizontal, 20)
+        .padding(.horizontal, 16)
         .padding(.vertical, 12)
         .background(.ultraThinMaterial)
     }
@@ -615,74 +1052,69 @@ private struct RoomChatView: View {
 
 private struct NewCommunityRoomRequest {
     let name: String
-    let details: String
-    let icon: String
     let topic: CommunityRoomTopic
-    let isPrivate: Bool
+    let details: String
     let welcomeMessage: String
+    let icon: String
+    let isPrivate: Bool
 }
 
 private enum CommunityRoomTopic: String, CaseIterable {
-    case brewing = "Brewing"
-    case pairings = "Pairings"
-    case beans = "Beans"
-    case techniques = "Techniques"
-    case challenge = "Challenge"
+    case brewing = "Brewing Technique"
+    case origin = "Bean Origins"
+    case sensory = "Sensory & Cupping"
+    case gear = "Equipment & Grinders"
+    case pairing = "Food Pairings"
 }
 
 private struct CreateCommunityRoomView: View {
     @Environment(\.dismiss) private var dismiss
 
-    @State private var roomName: String = ""
-    @State private var roomDescription: String = ""
-    @State private var selectedIcon: String = "cup.and.saucer.fill"
+    @State private var name: String = ""
     @State private var selectedTopic: CommunityRoomTopic = .brewing
-    @State private var isPrivate: Bool = false
+    @State private var details: String = ""
     @State private var welcomeMessage: String = ""
+    @State private var isPrivate: Bool = false
+    @State private var selectedIcon: String = "bubble.left.and.bubble.right.fill"
 
     let onCreate: (NewCommunityRoomRequest) -> Void
 
-    private let icons = [
+    private let availableIcons = [
+        "bubble.left.and.bubble.right.fill",
         "cup.and.saucer.fill",
+        "flame.fill",
         "globe.americas.fill",
         "flask.fill",
-        "fork.knife",
-        "moon.stars.fill",
+        "sparkles",
         "trophy.fill",
-        "flame.fill",
-        "sparkles"
+        "fork.knife",
+        "leaf.fill"
     ]
-
-    private var canCreate: Bool {
-        !roomName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-    }
 
     var body: some View {
         NavigationStack {
             Form {
-                Section("Channel Details") {
-                    TextField("Channel Name", text: $roomName)
-                    TextField("Description", text: $roomDescription, axis: .vertical)
-                        .lineLimit(2...4)
+                Section("Room Identity") {
+                    TextField("Room Title", text: $name)
+                    Picker("Topic", selection: $selectedTopic) {
+                        ForEach(CommunityRoomTopic.allCases, id: \.self) { topic in
+                            Text(topic.rawValue).tag(topic)
+                        }
+                    }
                 }
 
                 Section("Icon") {
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 12) {
-                            ForEach(icons, id: \.self) { icon in
+                            ForEach(availableIcons, id: \.self) { icon in
                                 Button {
                                     selectedIcon = icon
                                 } label: {
                                     ZStack {
                                         Circle()
-                                            .fill(
-                                                selectedIcon == icon ?
-                                                    CoffeeTheme.accentPrimary :
-                                                    Color(uiColor: .tertiarySystemGroupedBackground)
-                                            )
+                                            .fill(selectedIcon == icon ? CoffeeTheme.accentPrimary : CoffeeTheme.cardAlt)
                                             .frame(width: 44, height: 44)
                                         Image(systemName: icon)
-                                            .font(.system(size: 18, weight: .semibold))
                                             .foregroundStyle(selectedIcon == icon ? Color.white : CoffeeTheme.textPrimary)
                                     }
                                 }
@@ -693,20 +1125,10 @@ private struct CreateCommunityRoomView: View {
                     }
                 }
 
-                Section("Topic") {
-                    Picker("Topic", selection: $selectedTopic) {
-                        ForEach(CommunityRoomTopic.allCases, id: \.self) { topic in
-                            Text(topic.rawValue).tag(topic)
-                        }
-                    }
-                    .pickerStyle(.menu)
-
+                Section("Details") {
+                    TextField("Brief Description", text: $details)
+                    TextField("Welcome message (shown to new members)", text: $welcomeMessage)
                     Toggle("Private Channel", isOn: $isPrivate)
-                }
-
-                Section("Welcome Message") {
-                    TextField("Optional pinned welcome", text: $welcomeMessage, axis: .vertical)
-                        .lineLimit(2...4)
                 }
             }
             .navigationTitle("New Channel")
@@ -720,18 +1142,18 @@ private struct CreateCommunityRoomView: View {
                     Button("Create") {
                         onCreate(
                             NewCommunityRoomRequest(
-                                name: roomName,
-                                details: roomDescription,
-                                icon: selectedIcon,
+                                name: name,
                                 topic: selectedTopic,
-                                isPrivate: isPrivate,
-                                welcomeMessage: welcomeMessage
+                                details: details,
+                                welcomeMessage: welcomeMessage,
+                                icon: selectedIcon,
+                                isPrivate: isPrivate
                             )
                         )
                         dismiss()
                     }
-                    .font(.headline.weight(.bold))
-                    .disabled(!canCreate)
+                    .disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    .font(.headline.weight(.semibold))
                 }
             }
         }

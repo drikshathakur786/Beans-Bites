@@ -168,8 +168,172 @@ struct BrewFlowView: View {
         }
     }
 
+    private var isPresetRecipe: Bool {
+        ritual != nil || vm.activeRitualID != nil
+    }
+
     // MARK: - Setup Stage
     private var setupStage: some View {
+        Group {
+            if isPresetRecipe {
+                recipeSetupView
+            } else {
+                customCalibrationView
+            }
+        }
+    }
+
+    // MARK: - Non-Interactive Recipe Setup View
+    private var recipeSetupView: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(spacing: 6) {
+                    Image(systemName: "lock.fill")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundStyle(CoffeeTheme.accentPrimary)
+                    Text("RECIPE SPECIFICATIONS")
+                        .font(.system(size: 11, weight: .bold))
+                        .tracking(1)
+                        .foregroundStyle(CoffeeTheme.accentPrimary)
+                }
+                .padding(.horizontal, 9)
+                .padding(.vertical, 4)
+                .background(CoffeeTheme.accentPrimary.opacity(0.12))
+                .clipShape(Capsule())
+
+                Text("Prescribed Parameters")
+                    .font(.title3.weight(.bold))
+                    .foregroundStyle(CoffeeTheme.textPrimary)
+
+                Text("Crafted for \(vm.activeRitualTitle ?? "this authentic recipe"). Specifications are fixed to ensure traditional flavor balance.")
+                    .font(.subheadline)
+                    .foregroundStyle(CoffeeTheme.textSecondary)
+            }
+
+            VStack(spacing: 10) {
+                recipeSpecRow(
+                    icon: "scalemass.fill",
+                    title: "Coffee Dose",
+                    value: String(format: "%.1f g", vm.doseGrams),
+                    badge: "Prescribed"
+                )
+
+                let ratio = Double(vm.waterML) / max(1.0, vm.doseGrams)
+                recipeSpecRow(
+                    icon: "drop.fill",
+                    title: "Water Target",
+                    value: "\(vm.waterML) ml",
+                    badge: String(format: "Ratio 1:%.1f", ratio)
+                )
+
+                recipeSpecRow(
+                    icon: "dial.medium",
+                    title: "Grind Size",
+                    value: vm.grindSize.rawValue.capitalized,
+                    badge: "Optimal"
+                )
+
+                recipeSpecRow(
+                    icon: "flame.fill",
+                    title: "Roast Level",
+                    value: vm.roast.rawValue.capitalized,
+                    badge: "Recommended"
+                )
+
+                if vm.totalGuidedSeconds > 0 {
+                    let minutes = vm.totalGuidedSeconds / 60
+                    let seconds = vm.totalGuidedSeconds % 60
+                    recipeSpecRow(
+                        icon: "timer",
+                        title: "Target Extraction Time",
+                        value: String(format: "%d:%02d min", minutes, seconds),
+                        badge: "\(vm.guidedSteps.count) Steps"
+                    )
+                }
+            }
+
+            HStack(spacing: 12) {
+                Button {
+                    if ritual != nil {
+                        dismiss()
+                    } else {
+                        vm.back()
+                    }
+                } label: {
+                    Text(ritual != nil ? "Cancel" : "Back")
+                        .font(.headline.weight(.semibold))
+                        .foregroundStyle(CoffeeTheme.textSecondary)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 14)
+                        .background(CoffeeTheme.card)
+                        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                .stroke(CoffeeTheme.border.opacity(0.8), lineWidth: 1)
+                        )
+                }
+
+                Button {
+                    let generator = UIImpactFeedbackGenerator(style: .medium)
+                    generator.impactOccurred()
+                    vm.advance()
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "play.fill")
+                            .font(.caption.weight(.bold))
+                        Text("Start Extraction")
+                            .font(.headline.weight(.bold))
+                    }
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 14)
+                    .background(CoffeeTheme.accentPrimary)
+                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    .shadow(color: CoffeeTheme.accentPrimary.opacity(0.3), radius: 6, y: 3)
+                }
+            }
+            .padding(.top, 4)
+        }
+    }
+
+    private func recipeSpecRow(icon: String, title: String, value: String, badge: String? = nil) -> some View {
+        HStack(spacing: 12) {
+            ZStack {
+                Circle()
+                    .fill(CoffeeTheme.accentPrimary.opacity(0.12))
+                    .frame(width: 36, height: 36)
+                Image(systemName: icon)
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(CoffeeTheme.accentPrimary)
+            }
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.caption)
+                    .foregroundStyle(CoffeeTheme.textSecondary)
+                Text(value)
+                    .font(.subheadline.weight(.bold))
+                    .foregroundStyle(CoffeeTheme.textPrimary)
+            }
+
+            Spacer()
+
+            if let badge {
+                Text(badge)
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(CoffeeTheme.accentPrimary)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(CoffeeTheme.accentPrimary.opacity(0.1))
+                    .clipShape(Capsule())
+            }
+        }
+        .padding(14)
+        .coffeeCard()
+    }
+
+    // MARK: - Interactive Custom Calibration View
+    private var customCalibrationView: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Calibrate Parameters")
                 .font(.title3.weight(.bold))
@@ -227,12 +391,11 @@ struct BrewFlowView: View {
                             .foregroundStyle(CoffeeTheme.textPrimary)
                     }
 
-                    Picker("Roast", selection: $vm.roast) {
-                        ForEach(RoastLevel.allCases, id: \.self) { roast in
-                            Text(roast.rawValue.capitalized).tag(roast)
-                        }
-                    }
-                    .pickerStyle(.segmented)
+                    CoffeeSegmentedPicker(
+                        selection: $vm.roast,
+                        items: RoastLevel.allCases,
+                        title: { $0.rawValue.capitalized }
+                    )
                 }
                 .padding(14)
                 .coffeeCard()

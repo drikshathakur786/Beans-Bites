@@ -40,12 +40,11 @@ struct OnboardingFlowView: View {
                 }
             case .skill:
                 page(title: "Skill Level", subtitle: "We adapt guidance to your comfort.") {
-                    Picker("Skill", selection: $vm.selectedSkill) {
-                        ForEach(OnboardingViewModel.SkillLevel.allCases, id: \.self) { level in
-                            Text(level.rawValue).tag(level)
-                        }
-                    }
-                    .pickerStyle(.segmented)
+                    CoffeeSegmentedPicker(
+                        selection: $vm.selectedSkill,
+                        items: OnboardingViewModel.SkillLevel.allCases,
+                        title: { $0.rawValue }
+                    )
                 }
             case .account:
                 page(title: "Create Account", subtitle: "Continue with Apple or email sign in.") {

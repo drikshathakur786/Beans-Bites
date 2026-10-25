@@ -980,7 +980,17 @@ private struct SignUpView: View {
 
         let ok = auth.completeOTPVerification(otp)
         if ok {
+            let newUserID = auth.session.userID
+
+            // Reset all previous user data before personalizing the new account
+            store.resetForNewUser()
+            CoffeeModelContainer.clearAllEntities()
+            UserDefaults.standard.removeObject(forKey: "brew_templates_v1")
+            AppCoordinatorViewModel.shared.resetForNewUser()
+            AppDomainDataModel.shared.reset()
+
             store.applySignupPersonalization(
+                userID: newUserID,
                 username: normalizedUsername,
                 displayName: inferredDisplayName,
                 avatarName: "avatar_alex",
