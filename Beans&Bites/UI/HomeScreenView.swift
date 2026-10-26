@@ -16,19 +16,23 @@ struct HomeScreenView: View {
 
     private var streakDays: Int { max(1, min(30, store.profile.stats.ritualsCount / 3)) }
 
-    /// Changes every day of the week — coffee-lover flavour
+    /// Changes every day of the week — coffee-lover flavour, with the user's first name
     private var dayGreeting: String {
+        let firstName = store.profile.user.displayName
+            .components(separatedBy: " ").first ?? "Brewer"
         let weekday = Calendar.current.component(.weekday, from: Date())
+        let phrase: String
         switch weekday {
-        case 1: return "Bonjour" // Sunday
-        case 2: return "Rise & Grind" // Monday
-        case 3: return "Bon Café" // Tuesday
-        case 4: return "Stay Grounded" // Wednesday
-        case 5: return "Espresso Yourself" // Thursday
-        case 6: return "TGIF — Brew It" // Friday
-        case 7: return "Slow Pour Saturday" // Saturday
-        default: return "Bonjour"
+        case 1: phrase = "Bonjour"           // Sunday
+        case 2: phrase = "Rise & Grind"      // Monday
+        case 3: phrase = "Bon Café"          // Tuesday
+        case 4: phrase = "Stay Grounded"     // Wednesday
+        case 5: phrase = "Espresso Yourself" // Thursday
+        case 6: phrase = "TGIF — Brew It"    // Friday
+        case 7: phrase = "Slow Pour Saturday" // Saturday
+        default: phrase = "Bonjour"
         }
+        return "\(phrase), \(firstName)"
     }
 
     private var greetingText: String {
