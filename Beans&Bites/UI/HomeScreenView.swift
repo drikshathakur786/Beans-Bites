@@ -12,7 +12,6 @@ struct HomeScreenView: View {
     private var featured: BrewRitual { store.featuredRitual }
     @State private var showFeaturedDetail: Bool = false
     @State private var showBaristaSheet: Bool = false
-    @State private var showScanner: Bool = false
     @State private var selectedRitualForBrew: BrewRitual?
 
     private var streakDays: Int { max(1, min(30, store.profile.stats.ritualsCount / 3)) }
@@ -58,18 +57,6 @@ struct HomeScreenView: View {
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
                 ToolbarItemGroup(placement: .topBarTrailing) {
-                    // Camera Bag Scanner
-                    Button {
-                        let generator = UIImpactFeedbackGenerator(style: .medium)
-                        generator.impactOccurred()
-                        showScanner = true
-                    } label: {
-                        Image(systemName: "camera.viewfinder")
-                            .font(.system(size: 16, weight: .semibold))
-                            .foregroundStyle(CoffeeTheme.accentPrimary)
-                    }
-                    .accessibilityLabel("Scan coffee bag")
-
                     // Streak Badge
                     HStack(spacing: 4) {
                         Image(systemName: "flame.fill")
@@ -110,9 +97,6 @@ struct HomeScreenView: View {
                 }
                 .presentationDetents([.medium, .large])
                 .presentationCornerRadius(32)
-            }
-            .sheet(isPresented: $showScanner) {
-                CoffeeBagScannerView()
             }
         }
     }

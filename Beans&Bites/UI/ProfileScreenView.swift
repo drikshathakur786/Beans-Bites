@@ -14,7 +14,6 @@ struct ProfileScreenView: View {
     @State private var showComposer = false
     @State private var showEditProfile = false
     @State private var showInsights = false
-    @State private var showBeanCellar = false
     @State private var showSignOutConfirm = false
 
     private var profile: ProfileData { store.profile }
@@ -95,18 +94,6 @@ struct ProfileScreenView: View {
                     }
                     .accessibilityLabel("Sensory insights")
 
-                    // Bean Cellar
-                    Button {
-                        let generator = UIImpactFeedbackGenerator(style: .light)
-                        generator.impactOccurred()
-                        showBeanCellar = true
-                    } label: {
-                        Image(systemName: "shippingbox.fill")
-                            .font(.system(size: 15, weight: .semibold))
-                            .foregroundStyle(CoffeeTheme.accentPrimary)
-                    }
-                    .accessibilityLabel("Bean cellar inventory")
-
                     // Edit
                     Button {
                         showEditProfile = true
@@ -130,9 +117,6 @@ struct ProfileScreenView: View {
             }
             .sheet(isPresented: $showInsights) {
                 InsightsScreenView()
-            }
-            .sheet(isPresented: $showBeanCellar) {
-                BeanCellarScreenView()
             }
             .confirmationDialog("Sign out of Beans & Bites?", isPresented: $showSignOutConfirm, titleVisibility: .visible) {
                 Button("Sign Out", role: .destructive) {
