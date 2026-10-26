@@ -100,7 +100,7 @@ final class AppDataStore: ObservableObject {
             }
         }
 
-        // Auto-merge authentic recipes & specialized black coffee pairings so they are always accessible
+        // Auto-merge authentic recipes & specialized coffee pairings so they are always accessible
         let authenticRecipes = AuthenticRecipeCatalog.makeAllRecipes()
         var existingTitles = Set(curatedRituals.map(\.title) + trendingRituals.map(\.title) + [featuredRitual.title])
         var newCurated: [BrewRitual] = []
@@ -111,8 +111,42 @@ final class AppDataStore: ObservableObject {
             }
         }
         if !newCurated.isEmpty {
-            curatedRituals.append(contentsOf: newCurated)
-            trendingRituals.append(contentsOf: newCurated.prefix(6))
+            // Prepend new authentic recipes to give them front-row prominence
+            curatedRituals = newCurated + curatedRituals
+            trendingRituals = Array(newCurated.prefix(6)) + trendingRituals
+            saveAppState()
+        }
+
+        // Feature the Indian flagship recipe if featuredRitual is still an older generic recipe
+        if featuredRitual.title.contains("V60") || featuredRitual.title.contains("Sunrise") {
+            if let indianHero = authenticRecipes.first(where: { $0.title.contains("South Indian Filter") }) {
+                featuredRitual = indianHero
+                saveAppState()
+            }
+        }
+
+        // Keep trending Indian market recipes prioritized at the front
+        let indianHeroTitles = [
+            "Traditional South Indian Filter Kaapi",
+            "Desi Pheti Hui Coffee",
+            "Coastal Tender Coconut Cold Brew",
+            "Monsoon Malabar French Press",
+            "Karupatti / Sukku Masala Kaapi",
+            "Subko-Style Orange Tonic Espresso",
+            "Vietnamese-Style Indian Iced Coffee",
+            "Araku Valley Tribal Aeropress",
+            "Shahi Kesar Elaichi Latte",
+            "Bengaluru Filter Cold Coffee"
+        ]
+        var prioritizedTrending: [BrewRitual] = []
+        for title in indianHeroTitles {
+            if let match = (curatedRituals + trendingRituals + authenticRecipes).first(where: { $0.title == title }),
+               !prioritizedTrending.contains(where: { $0.title == match.title }) {
+                prioritizedTrending.append(match)
+            }
+        }
+        if !prioritizedTrending.isEmpty {
+            trendingRituals = prioritizedTrending
             saveAppState()
         }
 
@@ -757,19 +791,20 @@ private struct SeedData {
         ]
 
         let authentic = AuthenticRecipeCatalog.makeAllRecipes()
+        let indianHero = authentic.first(where: { $0.title.contains("South Indian Filter") }) ?? authentic[0]
         let authenticPairings = AuthenticRecipeCatalog.makeAllPairingGuides()
-        let allGuides = guides + authenticPairings
+        let allGuides = authenticPairings + guides
 
         return SeedData(
-            featuredRitual: v60,
-            curatedRituals: [kyoto, flatWhite] + authentic,
+            featuredRitual: indianHero,
+            curatedRituals: authentic,
             discoverCategories: [
                 DiscoverCategory(title: "Pairings", subtitle: "\(allGuides.count) Guides", iconName: "wineglass", keyword: "desserts"),
                 DiscoverCategory(title: "Beans", subtitle: "Global Atlas", iconName: "globe", keyword: "origin"),
                 DiscoverCategory(title: "Roasts", subtitle: "Flavor Profiles", iconName: "flame", keyword: "roast"),
                 DiscoverCategory(title: "Grind Guide", subtitle: "Precision", iconName: "dial", keyword: "grind")
             ],
-            trendingRituals: [v60, kyoto, flatWhite] + Array(authentic.prefix(5)),
+            trendingRituals: Array(authentic.prefix(8)),
             editorialCards: [
                 EditorialCard(categoryLabel: "Editorial", quote: "The secret to a perfect bloom lies in the first 30 seconds of patience."),
                 EditorialCard(categoryLabel: "Masterclass", quote: "The visual clarity of glass enhances the sensory perception of your pour.", author: "Elena Rostova")

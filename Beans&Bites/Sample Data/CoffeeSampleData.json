@@ -2,6 +2,66 @@
   "beans": [
     {
       "id": "b1111111-1111-1111-1111-111111111111",
+      "name": "Chikmagalur Peaberry Blend",
+      "origin": "Karnataka, India",
+      "variety": "Peaberry & Chicory (80:20)",
+      "process": "Washed",
+      "altitudeMeters": 1250,
+      "recommendedRoast": "dark",
+      "notes": ["caramel", "cocoa", "spice"]
+    },
+    {
+      "id": "b2222222-2222-2222-2222-222222222222",
+      "name": "Monsoon Malabar AA",
+      "origin": "Malabar Coast, India",
+      "variety": "Monsooned Arabica",
+      "process": "Monsooned Natural",
+      "altitudeMeters": 1100,
+      "recommendedRoast": "dark",
+      "notes": ["cocoa", "spice", "nutty"]
+    },
+    {
+      "id": "b3333333-3333-3333-3333-333333333333",
+      "name": "Araku Valley Tribal Organic",
+      "origin": "Andhra Pradesh, India",
+      "variety": "Selection 9 Organic",
+      "process": "Honey",
+      "altitudeMeters": 1250,
+      "recommendedRoast": "medium",
+      "notes": ["citrus", "stoneFruit", "caramel"]
+    },
+    {
+      "id": "b4444444-4444-4444-4444-444444444444",
+      "name": "Coorg Estate Robusta",
+      "origin": "Kodagu, Karnataka, India",
+      "variety": "Cauvery & Robusta",
+      "process": "Shade-Grown Natural",
+      "altitudeMeters": 1100,
+      "recommendedRoast": "dark",
+      "notes": ["spice", "cocoa", "nutty"]
+    },
+    {
+      "id": "b5555555-5555-5555-5555-555555555555",
+      "name": "Wayanad Fine Robusta",
+      "origin": "Kerala, India",
+      "variety": "Canephora Robusta Bold",
+      "process": "Wet Polished",
+      "altitudeMeters": 950,
+      "recommendedRoast": "dark",
+      "notes": ["cocoa", "citrus", "nutty"]
+    },
+    {
+      "id": "b6666666-6666-6666-6666-666666666666",
+      "name": "Shevaroy Hills Arabica",
+      "origin": "Tamil Nadu, India",
+      "variety": "S795 High Elevation",
+      "process": "Washed",
+      "altitudeMeters": 1400,
+      "recommendedRoast": "medium",
+      "notes": ["floral", "caramel", "stoneFruit"]
+    },
+    {
+      "id": "b7777777-7777-7777-7777-777777777777",
       "name": "Ethiopian Yirgacheffe",
       "origin": "Ethiopia",
       "variety": "Heirloom",
@@ -11,57 +71,7 @@
       "notes": ["citrus", "floral", "berry"]
     },
     {
-      "id": "b2222222-2222-2222-2222-222222222222",
-      "name": "Panama Geisha",
-      "origin": "Panama",
-      "variety": "Geisha",
-      "process": "Natural",
-      "altitudeMeters": 1850,
-      "recommendedRoast": "light",
-      "notes": ["floral", "stoneFruit", "citrus"]
-    },
-    {
-      "id": "b3333333-3333-3333-3333-333333333333",
-      "name": "Colombia Huila",
-      "origin": "Colombia",
-      "variety": "Caturra",
-      "process": "Honey",
-      "altitudeMeters": 1700,
-      "recommendedRoast": "medium",
-      "notes": ["caramel", "nutty", "stoneFruit"]
-    },
-    {
-      "id": "b4444444-4444-4444-4444-444444444444",
-      "name": "Kenya AA Nyeri",
-      "origin": "Kenya",
-      "variety": "SL28",
-      "process": "Washed",
-      "altitudeMeters": 1950,
-      "recommendedRoast": "light",
-      "notes": ["berry", "citrus", "floral"]
-    },
-    {
-      "id": "b5555555-5555-5555-5555-555555555555",
-      "name": "Guatemala Antigua",
-      "origin": "Guatemala",
-      "variety": "Bourbon",
-      "process": "Washed",
-      "altitudeMeters": 1650,
-      "recommendedRoast": "mediumDark",
-      "notes": ["cocoa", "spice", "caramel"]
-    },
-    {
-      "id": "b6666666-6666-6666-6666-666666666666",
-      "name": "Sumatra Mandheling",
-      "origin": "Indonesia",
-      "variety": "Typica",
-      "process": "Wet Hulled",
-      "altitudeMeters": 1500,
-      "recommendedRoast": "dark",
-      "notes": ["spice", "cocoa", "nutty"]
-    },
-    {
-      "id": "b7777777-7777-7777-7777-777777777777",
+      "id": "b8888888-8888-8888-8888-888888888888",
       "name": "Brazil Santos",
       "origin": "Brazil",
       "variety": "Mundo Novo",
@@ -69,16 +79,6 @@
       "altitudeMeters": 1200,
       "recommendedRoast": "medium",
       "notes": ["chocolate", "nutty", "caramel"]
-    },
-    {
-      "id": "b8888888-8888-8888-8888-888888888888",
-      "name": "Rwanda Huye",
-      "origin": "Rwanda",
-      "variety": "Bourbon",
-      "process": "Washed",
-      "altitudeMeters": 1800,
-      "recommendedRoast": "light",
-      "notes": ["berry", "citrus", "stoneFruit"]
     }
   ],
   "pairingGuides": [
@@ -86,149 +86,96 @@
       "id": "g1111111-1111-1111-1111-111111111111",
       "bean": {
         "id": "b1111111-1111-1111-1111-111111111111",
-        "name": "Ethiopian Yirgacheffe",
-        "origin": "Ethiopia",
-        "variety": "Heirloom",
+        "name": "Chikmagalur Peaberry Blend",
+        "origin": "Karnataka, India",
+        "variety": "Peaberry & Chicory",
         "process": "Washed",
-        "altitudeMeters": 2100,
-        "recommendedRoast": "light",
-        "notes": ["citrus", "floral", "berry"]
+        "altitudeMeters": 1250,
+        "recommendedRoast": "dark",
+        "notes": ["caramel", "cocoa", "spice"]
       },
-      "method": "pourOver",
+      "method": "frenchPress",
       "pairings": [
-        { "id": "p1111111-1111-1111-1111-111111111111", "name": "Butter Croissant", "category": "Pastry", "accentFlavor": "caramel" },
-        { "id": "p1111111-1111-1111-1111-111111111112", "name": "Lemon Tart", "category": "Dessert", "accentFlavor": "citrus" }
+        { "id": "p1111111-1111-1111-1111-111111111111", "name": "Crispy Medu Vada & Chutney", "category": "Traditional Savory", "accentFlavor": "caramel" },
+        { "id": "p1111111-1111-1111-1111-111111111112", "name": "Ghee Mysore Pak", "category": "Traditional Sweet", "accentFlavor": "caramel" }
       ],
-      "whyItWorks": "Bright acidity balances buttery pastry and highlights citrus aromatics."
+      "whyItWorks": "Bittersweet chicory decoction is cut cleanly by crispy lentil crunch and coconut chutney acidity, while sweet Mysore Pak melts into warm caramel tones."
     },
     {
       "id": "g2222222-2222-2222-2222-222222222222",
       "bean": {
         "id": "b2222222-2222-2222-2222-222222222222",
-        "name": "Panama Geisha",
-        "origin": "Panama",
-        "variety": "Geisha",
-        "process": "Natural",
-        "altitudeMeters": 1850,
-        "recommendedRoast": "light",
-        "notes": ["floral", "stoneFruit", "citrus"]
+        "name": "Monsoon Malabar AA",
+        "origin": "Malabar Coast, India",
+        "variety": "Monsooned Arabica",
+        "process": "Monsooned Natural",
+        "altitudeMeters": 1100,
+        "recommendedRoast": "dark",
+        "notes": ["cocoa", "spice", "nutty"]
       },
-      "method": "v60",
+      "method": "frenchPress",
       "pairings": [
-        { "id": "p2222222-2222-2222-2222-222222222221", "name": "Vanilla Shortbread", "category": "Cookie", "accentFlavor": "floral" },
-        { "id": "p2222222-2222-2222-2222-222222222222", "name": "Peach Danish", "category": "Pastry", "accentFlavor": "stoneFruit" }
+        { "id": "p2222222-2222-2222-2222-222222222221", "name": "Pune Shrewsbury Butter Biscuits", "category": "Heritage Cookie", "accentFlavor": "caramel" },
+        { "id": "p2222222-2222-2222-2222-222222222222", "name": "70% Dark Cacao Bar", "category": "Chocolate", "accentFlavor": "chocolate" }
       ],
-      "whyItWorks": "Delicate florals and tea-like body pair best with subtle sweetness."
+      "whyItWorks": "Naturally low in acidity with dense cedar and earthy spice notes, Monsoon Malabar shines alongside buttery bakery biscuits and bittersweet cocoa."
     },
     {
       "id": "g3333333-3333-3333-3333-333333333333",
       "bean": {
         "id": "b3333333-3333-3333-3333-333333333333",
-        "name": "Colombia Huila",
-        "origin": "Colombia",
-        "variety": "Caturra",
+        "name": "Araku Valley Tribal Organic",
+        "origin": "Andhra Pradesh, India",
+        "variety": "Selection 9 Organic",
         "process": "Honey",
-        "altitudeMeters": 1700,
+        "altitudeMeters": 1250,
         "recommendedRoast": "medium",
-        "notes": ["caramel", "nutty", "stoneFruit"]
+        "notes": ["citrus", "stoneFruit", "caramel"]
       },
       "method": "aeropress",
       "pairings": [
-        { "id": "p3333333-3333-3333-3333-333333333331", "name": "Banana Bread", "category": "Loaf", "accentFlavor": "caramel" },
-        { "id": "p3333333-3333-3333-3333-333333333332", "name": "Pecan Biscotti", "category": "Cookie", "accentFlavor": "nutty" }
+        { "id": "p3333333-3333-3333-3333-333333333331", "name": "Walnut Cardamom Nankhatai", "category": "Indian Shortbread", "accentFlavor": "nutty" },
+        { "id": "p3333333-3333-3333-3333-333333333332", "name": "Dark Chocolate Brownie", "category": "Bakery", "accentFlavor": "stoneFruit" }
       ],
-      "whyItWorks": "Round body and caramel sweetness mirror baked goods and nuts."
+      "whyItWorks": "Clean honey-processed berry and plum brightness balances the rich roasted ghee and nutty crunch of fresh traditional Nankhatai."
     },
     {
       "id": "g4444444-4444-4444-4444-444444444444",
       "bean": {
         "id": "b4444444-4444-4444-4444-444444444444",
-        "name": "Kenya AA Nyeri",
-        "origin": "Kenya",
-        "variety": "SL28",
-        "process": "Washed",
-        "altitudeMeters": 1950,
-        "recommendedRoast": "light",
-        "notes": ["berry", "citrus", "floral"]
+        "name": "Coorg Estate Robusta",
+        "origin": "Kodagu, Karnataka, India",
+        "variety": "Cauvery & Robusta",
+        "process": "Shade-Grown Natural",
+        "altitudeMeters": 1100,
+        "recommendedRoast": "dark",
+        "notes": ["spice", "cocoa", "nutty"]
       },
       "method": "pourOver",
       "pairings": [
-        { "id": "p4444444-4444-4444-4444-444444444441", "name": "Blueberry Muffin", "category": "Pastry", "accentFlavor": "berry" }
+        { "id": "p4444444-4444-4444-4444-444444444441", "name": "Warm Buttered Bun Maska", "category": "Café Classic", "accentFlavor": "caramel" },
+        { "id": "p4444444-4444-4444-4444-444444444442", "name": "Sesame Peanut Chikki", "category": "Confection", "accentFlavor": "spice" }
       ],
-      "whyItWorks": "Berry-forward cup amplifies fruit desserts and lively acidity."
+      "whyItWorks": "Bold cocoa bitterness is cushioned by soft bakery bun and melting butter, while caramelized jaggery chikki brings delightful crunchy sweetness."
     },
     {
       "id": "g5555555-5555-5555-5555-555555555555",
       "bean": {
         "id": "b5555555-5555-5555-5555-555555555555",
-        "name": "Guatemala Antigua",
-        "origin": "Guatemala",
-        "variety": "Bourbon",
-        "process": "Washed",
-        "altitudeMeters": 1650,
-        "recommendedRoast": "mediumDark",
-        "notes": ["cocoa", "spice", "caramel"]
+        "name": "Wayanad Fine Robusta",
+        "origin": "Kerala, India",
+        "variety": "Canephora Robusta Bold",
+        "process": "Wet Polished",
+        "altitudeMeters": 950,
+        "recommendedRoast": "dark",
+        "notes": ["cocoa", "citrus", "nutty"]
       },
       "method": "espresso",
       "pairings": [
-        { "id": "p5555555-5555-5555-5555-555555555551", "name": "Dark Chocolate Tart", "category": "Dessert", "accentFlavor": "chocolate" },
-        { "id": "p5555555-5555-5555-5555-555555555552", "name": "Cinnamon Roll", "category": "Pastry", "accentFlavor": "spice" }
+        { "id": "p5555555-5555-5555-5555-555555555551", "name": "Crispy Kerala Banana Chips", "category": "Savory Street Snack", "accentFlavor": "citrus" },
+        { "id": "p5555555-5555-5555-5555-555555555552", "name": "Belgian Chocolate Chunk Cookie", "category": "Bakery", "accentFlavor": "chocolate" }
       ],
-      "whyItWorks": "Cocoa depth and spice notes complement rich desserts and syrup textures."
-    },
-    {
-      "id": "g6666666-6666-6666-6666-666666666666",
-      "bean": {
-        "id": "b6666666-6666-6666-6666-666666666666",
-        "name": "Sumatra Mandheling",
-        "origin": "Indonesia",
-        "variety": "Typica",
-        "process": "Wet Hulled",
-        "altitudeMeters": 1500,
-        "recommendedRoast": "dark",
-        "notes": ["spice", "cocoa", "nutty"]
-      },
-      "method": "frenchPress",
-      "pairings": [
-        { "id": "p6666666-6666-6666-6666-666666666661", "name": "Molasses Cookie", "category": "Cookie", "accentFlavor": "spice" }
-      ],
-      "whyItWorks": "Heavy body and earthy spice stand up to dense, sweet baked goods."
-    },
-    {
-      "id": "g7777777-7777-7777-7777-777777777777",
-      "bean": {
-        "id": "b7777777-7777-7777-7777-777777777777",
-        "name": "Brazil Santos",
-        "origin": "Brazil",
-        "variety": "Mundo Novo",
-        "process": "Natural",
-        "altitudeMeters": 1200,
-        "recommendedRoast": "medium",
-        "notes": ["chocolate", "nutty", "caramel"]
-      },
-      "method": "latte",
-      "pairings": [
-        { "id": "p7777777-7777-7777-7777-777777777771", "name": "Hazelnut Cake", "category": "Dessert", "accentFlavor": "nutty" }
-      ],
-      "whyItWorks": "Chocolate base survives milk, making dessert pairings smooth and sweet."
-    },
-    {
-      "id": "g8888888-8888-8888-8888-888888888888",
-      "bean": {
-        "id": "b8888888-8888-8888-8888-888888888888",
-        "name": "Rwanda Huye",
-        "origin": "Rwanda",
-        "variety": "Bourbon",
-        "process": "Washed",
-        "altitudeMeters": 1800,
-        "recommendedRoast": "light",
-        "notes": ["berry", "citrus", "stoneFruit"]
-      },
-      "method": "coldBrew",
-      "pairings": [
-        { "id": "p8888888-8888-8888-8888-888888888881", "name": "Strawberry Scone", "category": "Pastry", "accentFlavor": "berry" }
-      ],
-      "whyItWorks": "Cold extraction smooths acidity while preserving bright fruit notes."
+      "whyItWorks": "Wayanad's heavy crema and bold cacao profile cuts through crisp coconut oil fried banana chips for an unforgettable sweet-savory contrast."
     }
   ]
 }
