@@ -153,14 +153,17 @@ private final class RecipeComposerDraft: ObservableObject {
     ]
 
     let pairingSuggestions = [
+        "Warm Bun Maska",
+        "Medu Vada & Chutney",
+        "Ghee Mysore Pak",
+        "Shrewsbury Biscuits",
+        "Cardamom Nankhatai",
+        "Hot Samosa",
+        "Dark Chocolate",
         "Almond Croissant",
         "Cheesecake",
-        "Dark Chocolate",
         "Brownie",
-        "Pancakes",
-        "Tiramisu",
-        "Ice Cream",
-        "Donut"
+        "Tiramisu"
     ]
 
     let tastingSuggestions = [
@@ -261,20 +264,47 @@ struct CreateRecipeFlowView: View {
             )
             .ignoresSafeArea()
 
-            ScrollView(showsIndicators: false) {
-                VStack(spacing: 18) {
-                    topNavigation
-                    pageProgress
-                    pageContent
-                    pagerControls
+            VStack(spacing: 0) {
+                ScrollView(showsIndicators: false) {
+                    VStack(spacing: 18) {
+                        topNavigation
+                        pageProgress
+                        pageContent
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.top, 10)
+                    .padding(.bottom, 16)
                 }
-                .padding(.horizontal, 16)
-                .padding(.top, 10)
-                .padding(.bottom, 24)
+                .scrollDismissesKeyboard(.interactively)
+
+                // Sticky bottom Continue/Next button (outside ScrollView so always tappable)
+                if currentPage != .publish {
+                    pagerControls
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 12)
+                        .background(
+                            LinearGradient(
+                                colors: [CoffeeTheme.bgPrimary.opacity(0), CoffeeTheme.bgPrimary],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                            .ignoresSafeArea(edges: .bottom)
+                        )
+                }
             }
         }
         .toolbar(.hidden, for: .navigationBar)
         .toolbar(.hidden, for: .tabBar)
+        .toolbar {
+            ToolbarItemGroup(placement: .keyboard) {
+                Spacer()
+                Button("Done") {
+                    UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+                }
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(CoffeeTheme.accentPrimary)
+            }
+        }
         .alert("Recipe", isPresented: .constant(message != nil), actions: {
             Button("OK") {
                 if message?.contains("Published") == true {
@@ -399,21 +429,20 @@ struct CreateRecipeFlowView: View {
 
     @ViewBuilder
     private var pagerControls: some View {
-        if currentPage != .publish {
-            HStack(spacing: 10) {
-                Button(currentPage == .essentials ? "Continue" : "Next") {
-                    goToNextPage()
-                }
+        Button {
+            UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+            goToNextPage()
+        } label: {
+            Text(currentPage == .essentials ? "Continue" : "Next")
                 .font(.headline.weight(.bold))
                 .foregroundStyle(.white)
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 14)
+                .padding(.vertical, 16)
                 .background(CoffeeTheme.accentPrimary)
                 .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
-                .buttonStyle(.plain)
-            }
-            .padding(.top, 4)
         }
+        .buttonStyle(.plain)
+        .shadow(color: CoffeeTheme.accentPrimary.opacity(0.3), radius: 10, x: 0, y: 4)
     }
 
     private var heroImageSection: some View {

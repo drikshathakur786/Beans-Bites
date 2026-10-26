@@ -1,286 +1,292 @@
 [
   {
     "id": "r1111111-1111-1111-1111-111111111111",
-    "title": "V60 Sunrise Bloom",
-    "subtitle": "Ethiopian Yirgacheffe • Light Roast",
-    "method": "v60",
-    "level": "master",
+    "title": "Traditional South Indian Filter Kaapi",
+    "subtitle": "Chikmagalur Peaberry • 80:20 Chicory",
+    "method": "frenchPress",
+    "level": "intermediate",
     "bean": {
       "id": "b1111111-1111-1111-1111-111111111111",
-      "name": "Ethiopian Yirgacheffe",
-      "origin": "Ethiopia",
-      "variety": "Heirloom",
+      "name": "Chikmagalur Peaberry Blend",
+      "origin": "Karnataka, India",
+      "variety": "Peaberry & Chicory",
       "process": "Washed",
-      "altitudeMeters": 2100,
-      "recommendedRoast": "light",
-      "notes": ["citrus", "floral", "berry"]
+      "altitudeMeters": 1250,
+      "recommendedRoast": "dark",
+      "notes": ["caramel", "cocoa", "spice"]
     },
-    "roast": "light",
+    "roast": "dark",
     "pairing": {
       "id": "p1111111-1111-1111-1111-111111111111",
-      "name": "Butter Croissant",
-      "category": "Pastry",
+      "name": "Crispy Medu Vada & Mysore Pak",
+      "category": "Traditional Indian Bite",
       "accentFlavor": "caramel"
     },
     "metrics": {
-      "doseGrams": 24,
-      "waterMilliliters": 384,
-      "ratioText": "1:16",
-      "targetTimeSeconds": 195,
-      "temperatureCelsius": 94,
-      "milkTemperatureCelsius": null,
-      "grindSize": "medium"
+      "doseGrams": 20,
+      "waterMilliliters": 100,
+      "ratioText": "1:5",
+      "targetTimeSeconds": 180,
+      "temperatureCelsius": 96,
+      "milkTemperatureCelsius": 75,
+      "grindSize": "fine"
     },
     "steps": [
-      { "id": "s1111111-1111-1111-1111-111111111111", "order": 1, "title": "Bloom", "details": "Pour 50g and wait for degassing.", "startSecond": 0, "endSecond": 45, "isActive": true },
-      { "id": "s1111111-1111-1111-1111-111111111112", "order": 2, "title": "Main Pour", "details": "Pour to 220g in circles.", "startSecond": 45, "endSecond": 120, "isActive": false },
-      { "id": "s1111111-1111-1111-1111-111111111113", "order": 3, "title": "Final Drawdown", "details": "Finish to 384g and let drain.", "startSecond": 120, "endSecond": 195, "isActive": false }
+      { "id": "s1111111-1111-1111-1111-111111111111", "order": 1, "title": "Decoction Extraction", "details": "Add 20g 80:20 coffee powder into traditional filter. Press lightly, pour 100ml boiling water and let decoction drip.", "startSecond": 0, "endSecond": 90, "isActive": true },
+      { "id": "s1111111-1111-1111-1111-111111111112", "order": 2, "title": "Boil Full-Cream Milk", "details": "Heat 120ml whole milk until rolling boil with rich micro-foam skin.", "startSecond": 90, "endSecond": 140, "isActive": false },
+      { "id": "s1111111-1111-1111-1111-111111111113", "order": 3, "title": "Meter Kaapi Aerial Pour", "details": "Pour back and forth between dabarah and tumbler from height to create thick golden froth.", "startSecond": 140, "endSecond": 180, "isActive": false }
     ],
     "tags": ["featured", "masterclass", "morningRitual"],
-    "imageName": "ritual_v60",
+    "imageName": "ritual_frenchpress",
     "isSaved": true,
     "isFeatured": true
   },
   {
     "id": "r2222222-2222-2222-2222-222222222222",
-    "title": "Golden Hour Double Shot",
-    "subtitle": "Syrupy espresso with citrus finish",
-    "method": "espresso",
-    "level": "intermediate",
+    "title": "Desi Pheti Hui Coffee",
+    "subtitle": "Hand-whipped golden cream • Indian street cappuccino",
+    "method": "latte",
+    "level": "beginner",
     "bean": {
       "id": "b3333333-3333-3333-3333-333333333333",
-      "name": "Colombia Huila",
-      "origin": "Colombia",
-      "variety": "Caturra",
-      "process": "Honey",
-      "altitudeMeters": 1700,
-      "recommendedRoast": "medium",
-      "notes": ["caramel", "nutty", "stoneFruit"]
+      "name": "Indian Gold Roast Blend",
+      "origin": "Coorg, India",
+      "variety": "Arabica & Robusta",
+      "process": "Estate Roasted",
+      "altitudeMeters": 1100,
+      "recommendedRoast": "mediumDark",
+      "notes": ["caramel", "cocoa", "nutty"]
     },
-    "roast": "medium",
-    "pairing": null,
+    "roast": "mediumDark",
+    "pairing": {
+      "id": "p2222222-2222-2222-2222-222222222221",
+      "name": "Warm Buttered Bun Maska",
+      "category": "Irani Café Classic",
+      "accentFlavor": "caramel"
+    },
     "metrics": {
-      "doseGrams": 18,
-      "waterMilliliters": 36,
-      "ratioText": "1:2",
-      "targetTimeSeconds": 28,
-      "temperatureCelsius": 94,
-      "milkTemperatureCelsius": null,
+      "doseGrams": 10,
+      "waterMilliliters": 150,
+      "ratioText": "1:15",
+      "targetTimeSeconds": 150,
+      "temperatureCelsius": 85,
+      "milkTemperatureCelsius": 70,
       "grindSize": "fine"
     },
     "steps": [
-      { "id": "s2222222-2222-2222-2222-222222222221", "order": 1, "title": "Prep Puck", "details": "Distribute and tamp evenly.", "startSecond": 0, "endSecond": 10, "isActive": true },
-      { "id": "s2222222-2222-2222-2222-222222222222", "order": 2, "title": "Extract", "details": "Stop near 36g output.", "startSecond": 10, "endSecond": 38, "isActive": false }
+      { "id": "s2222222-2222-2222-2222-222222222221", "order": 1, "title": "The Desi Whip", "details": "Beat coffee, sugar, and warm water vigorously with a spoon until pale golden mousse forms.", "startSecond": 0, "endSecond": 90, "isActive": true },
+      { "id": "s2222222-2222-2222-2222-222222222222", "order": 2, "title": "Cloud Pour & Rise", "details": "Pour steaming milk from height; watch thick velvety cloud float on top.", "startSecond": 90, "endSecond": 150, "isActive": false }
     ],
-    "tags": ["morningRitual"],
-    "imageName": "ritual_espresso",
-    "isSaved": false,
+    "tags": ["morningRitual", "beginnerFriendly", "featured"],
+    "imageName": "ritual_latte",
+    "isSaved": true,
     "isFeatured": false
   },
   {
     "id": "r3333333-3333-3333-3333-333333333333",
-    "title": "Kyoto Midnight",
-    "subtitle": "12-hour immersion cold brew",
+    "title": "Coastal Tender Coconut Cold Brew",
+    "subtitle": "Fresh daab water & chilled single-origin float",
     "method": "coldBrew",
-    "level": "intermediate",
+    "level": "beginner",
     "bean": {
       "id": "b7777777-7777-7777-7777-777777777777",
-      "name": "Brazil Santos",
-      "origin": "Brazil",
-      "variety": "Mundo Novo",
+      "name": "Monsoon Malabar AA",
+      "origin": "Malabar Coast, India",
+      "variety": "Monsooned Arabica",
       "process": "Natural",
-      "altitudeMeters": 1200,
+      "altitudeMeters": 1100,
       "recommendedRoast": "medium",
-      "notes": ["chocolate", "nutty", "caramel"]
+      "notes": ["nutty", "spice", "caramel"]
     },
     "roast": "medium",
     "pairing": {
       "id": "p3333333-3333-3333-3333-333333333331",
-      "name": "Chocolate Croissant",
-      "category": "Pastry",
-      "accentFlavor": "chocolate"
+      "name": "Coconut Jaggery Tea Cake",
+      "category": "Artisanal Bakery",
+      "accentFlavor": "nutty"
     },
     "metrics": {
-      "doseGrams": 80,
-      "waterMilliliters": 1000,
-      "ratioText": "1:12.5",
-      "targetTimeSeconds": 43200,
-      "temperatureCelsius": 20,
+      "doseGrams": 25,
+      "waterMilliliters": 200,
+      "ratioText": "1:8",
+      "targetTimeSeconds": 120,
+      "temperatureCelsius": 10,
       "milkTemperatureCelsius": null,
       "grindSize": "coarse"
     },
     "steps": [
-      { "id": "s3333333-3333-3333-3333-333333333331", "order": 1, "title": "Combine", "details": "Mix grounds and water thoroughly.", "startSecond": 0, "endSecond": 120, "isActive": true },
-      { "id": "s3333333-3333-3333-3333-333333333332", "order": 2, "title": "Steep", "details": "Rest in fridge for 12 hours.", "startSecond": 120, "endSecond": 43200, "isActive": false }
+      { "id": "s3333333-3333-3333-3333-333333333331", "order": 1, "title": "Fresh Daab & Ice", "details": "Fill glass with ice and pour 140ml fresh sweet tender coconut water.", "startSecond": 0, "endSecond": 30, "isActive": true },
+      { "id": "s3333333-3333-3333-3333-333333333332", "order": 2, "title": "Slow Spoon Float", "details": "Float chilled bold cold brew over inverted spoon to create sunset ombre layers.", "startSecond": 30, "endSecond": 120, "isActive": false }
     ],
-    "tags": ["seasonal"],
+    "tags": ["seasonal", "featured"],
     "imageName": "ritual_kyoto",
     "isSaved": true,
     "isFeatured": false
   },
   {
     "id": "r4444444-4444-4444-4444-444444444444",
-    "title": "Velvet Flat White",
-    "subtitle": "Micro-foam + ristretto base",
-    "method": "flatWhite",
+    "title": "Monsoon Malabar French Press",
+    "subtitle": "GI-tagged low acidity • Heavy cedar & dark chocolate body",
+    "method": "frenchPress",
     "level": "intermediate",
     "bean": {
       "id": "b5555555-5555-5555-5555-555555555555",
-      "name": "Guatemala Antigua",
-      "origin": "Guatemala",
-      "variety": "Bourbon",
-      "process": "Washed",
-      "altitudeMeters": 1650,
-      "recommendedRoast": "mediumDark",
-      "notes": ["cocoa", "spice", "caramel"]
+      "name": "Monsoon Malabar AA Special Reserve",
+      "origin": "Karnataka, India",
+      "variety": "S795 Monsooned",
+      "process": "Ocean Wind Monsooned",
+      "altitudeMeters": 1150,
+      "recommendedRoast": "dark",
+      "notes": ["cocoa", "spice", "nutty"]
     },
-    "roast": "mediumDark",
+    "roast": "dark",
     "pairing": {
       "id": "p4444444-4444-4444-4444-444444444441",
-      "name": "Velvet Cocoa Slice",
-      "category": "Dessert",
-      "accentFlavor": "chocolate"
+      "name": "Pune Shrewsbury Butter Biscuits",
+      "category": "Heritage Bakery",
+      "accentFlavor": "caramel"
     },
     "metrics": {
-      "doseGrams": 18,
-      "waterMilliliters": 36,
-      "ratioText": "1:2",
-      "targetTimeSeconds": 70,
+      "doseGrams": 24,
+      "waterMilliliters": 360,
+      "ratioText": "1:15",
+      "targetTimeSeconds": 240,
       "temperatureCelsius": 94,
-      "milkTemperatureCelsius": 65,
-      "grindSize": "fine"
+      "milkTemperatureCelsius": null,
+      "grindSize": "coarse"
     },
     "steps": [
-      { "id": "s4444444-4444-4444-4444-444444444441", "order": 1, "title": "Extract Espresso", "details": "Pull a short double shot.", "startSecond": 0, "endSecond": 30, "isActive": true },
-      { "id": "s4444444-4444-4444-4444-444444444442", "order": 2, "title": "Steam Milk", "details": "Texture milk to glossy micro-foam.", "startSecond": 30, "endSecond": 70, "isActive": false }
+      { "id": "s4444444-4444-4444-4444-444444444441", "order": 1, "title": "Bloom", "details": "Saturate grounds with 80ml hot water and rest for 45s.", "startSecond": 0, "endSecond": 45, "isActive": true },
+      { "id": "s4444444-4444-4444-4444-444444444442", "order": 2, "title": "Full Steep", "details": "Fill remaining water, stir twice, cover and steep for 3 mins.", "startSecond": 45, "endSecond: 210", "isActive": false },
+      { "id": "s4444444-4444-4444-4444-444444444443", "order": 3, "title": "Velvet Plunge", "details": "Plunge slowly and pour for rich, syrupy dark brew.", "startSecond": 210, "endSecond": 240, "isActive": false }
     ],
-    "tags": ["beginnerFriendly"],
-    "imageName": "ritual_flatwhite",
+    "tags": ["masterclass", "featured"],
+    "imageName": "ritual_frenchpress",
     "isSaved": false,
     "isFeatured": false
   },
   {
     "id": "r5555555-5555-5555-5555-555555555555",
-    "title": "AeroPress Clean Cup",
-    "subtitle": "Fast and sweet travel brew",
+    "title": "Araku Valley Tribal Aeropress",
+    "subtitle": "Organic high-grown microlot • Plum & honey finish",
     "method": "aeropress",
-    "level": "beginner",
+    "level": "intermediate",
     "bean": {
       "id": "b8888888-8888-8888-8888-888888888888",
-      "name": "Rwanda Huye",
-      "origin": "Rwanda",
-      "variety": "Bourbon",
-      "process": "Washed",
-      "altitudeMeters": 1800,
+      "name": "Araku Valley Tribal Microlot",
+      "origin": "Eastern Ghats, India",
+      "variety": "Red Bourbon & S9",
+      "process": "Semi-Washed Honey",
+      "altitudeMeters": 1300,
       "recommendedRoast": "light",
-      "notes": ["berry", "citrus", "stoneFruit"]
+      "notes": ["berry", "stoneFruit", "caramel"]
     },
     "roast": "light",
     "pairing": {
       "id": "p5555555-5555-5555-5555-555555555551",
-      "name": "Orange Biscotti",
-      "category": "Cookie",
-      "accentFlavor": "citrus"
+      "name": "Walnut Cardamom Nankhatai",
+      "category": "Indian Shortbread",
+      "accentFlavor": "nutty"
     },
     "metrics": {
       "doseGrams": 16,
-      "waterMilliliters": 240,
-      "ratioText": "1:15",
-      "targetTimeSeconds": 120,
-      "temperatureCelsius": 92,
+      "waterMilliliters": 220,
+      "ratioText": "1:14",
+      "targetTimeSeconds": 105,
+      "temperatureCelsius": 90,
       "milkTemperatureCelsius": null,
       "grindSize": "mediumFine"
     },
     "steps": [
-      { "id": "s5555555-5555-5555-5555-555555555551", "order": 1, "title": "Add Coffee", "details": "Add grounds and start timer.", "startSecond": 0, "endSecond": 10, "isActive": true },
-      { "id": "s5555555-5555-5555-5555-555555555552", "order": 2, "title": "Steep", "details": "Stir and steep for 60 seconds.", "startSecond": 10, "endSecond": 70, "isActive": false },
-      { "id": "s5555555-5555-5555-5555-555555555553", "order": 3, "title": "Press", "details": "Press slowly for 30-40 seconds.", "startSecond": 70, "endSecond": 120, "isActive": false }
+      { "id": "s5555555-5555-5555-5555-555555555551", "order": 1, "title": "Inverted Fill", "details": "Add coffee and water at 90C within 20s.", "startSecond": 0, "endSecond": 20, "isActive": true },
+      { "id": "s5555555-5555-5555-5555-555555555552", "order": 2, "title": "Steep", "details": "Stir 3 times, cap filter, steep until 75s.", "startSecond": 20, "endSecond": 75, "isActive": false },
+      { "id": "s5555555-5555-5555-5555-555555555553", "order": 3, "title": "Plunge", "details": "Flip and press steadily for 30s.", "startSecond": 75, "endSecond": 105, "isActive": false }
     ],
-    "tags": ["morningRitual"],
+    "tags": ["morningRitual", "competition"],
     "imageName": "ritual_aeropress",
     "isSaved": true,
     "isFeatured": false
   },
   {
     "id": "r6666666-6666-6666-6666-666666666666",
-    "title": "Classic French Press",
-    "subtitle": "Rich body and cocoa finish",
-    "method": "frenchPress",
-    "level": "beginner",
+    "title": "Subko-Style Orange Tonic Espresso",
+    "subtitle": "Sparkling botanical craft tonic with espresso & fresh orange",
+    "method": "espresso",
+    "level": "intermediate",
     "bean": {
       "id": "b6666666-6666-6666-6666-666666666666",
-      "name": "Sumatra Mandheling",
-      "origin": "Indonesia",
-      "variety": "Typica",
-      "process": "Wet Hulled",
-      "altitudeMeters": 1500,
-      "recommendedRoast": "dark",
-      "notes": ["spice", "cocoa", "nutty"]
+      "name": "Araku Valley Organic",
+      "origin": "Andhra Pradesh, India",
+      "variety": "Selection 9",
+      "process": "Honey",
+      "altitudeMeters": 1250,
+      "recommendedRoast": "medium",
+      "notes": ["citrus", "stoneFruit", "cocoa"]
     },
-    "roast": "dark",
+    "roast": "medium",
     "pairing": {
       "id": "p6666666-6666-6666-6666-666666666661",
-      "name": "Molasses Cookie",
-      "category": "Cookie",
-      "accentFlavor": "spice"
+      "name": "Nagpur Orange Tea Cake",
+      "category": "Pastry",
+      "accentFlavor": "citrus"
     },
     "metrics": {
-      "doseGrams": 30,
-      "waterMilliliters": 500,
-      "ratioText": "1:16.6",
-      "targetTimeSeconds": 300,
+      "doseGrams": 18,
+      "waterMilliliters": 160,
+      "ratioText": "1:9",
+      "targetTimeSeconds": 45,
       "temperatureCelsius": 93,
       "milkTemperatureCelsius": null,
-      "grindSize": "coarse"
+      "grindSize": "fine"
     },
     "steps": [
-      { "id": "s6666666-6666-6666-6666-666666666661", "order": 1, "title": "Bloom", "details": "Wet grounds and rest 30 sec.", "startSecond": 0, "endSecond": 30, "isActive": true },
-      { "id": "s6666666-6666-6666-6666-666666666662", "order": 2, "title": "Steep", "details": "Fill and steep 4 min.", "startSecond": 30, "endSecond": 270, "isActive": false },
-      { "id": "s6666666-6666-6666-6666-666666666663", "order": 3, "title": "Plunge", "details": "Plunge slowly and serve.", "startSecond": 270, "endSecond": 300, "isActive": false }
+      { "id": "s6666666-6666-6666-6666-666666666661", "order": 1, "title": "Tonic Base", "details": "Fill glass with ice and 120ml botanical tonic.", "startSecond": 0, "endSecond": 15, "isActive": true },
+      { "id": "s6666666-6666-6666-6666-666666666662", "order": 2, "title": "Pull Espresso", "details": "Extract 36g citrus double espresso.", "startSecond": 15, "endSecond": 40, "isActive": false },
+      { "id": "s6666666-6666-6666-6666-666666666663", "order": 3, "title": "Orange Twist", "details": "Express Nagpur orange peel and float espresso.", "startSecond": 40, "endSecond": 60, "isActive": false }
     ],
-    "tags": ["beginnerFriendly"],
-    "imageName": "ritual_frenchpress",
+    "tags": ["seasonal", "competition"],
+    "imageName": "ritual_espresso",
     "isSaved": false,
     "isFeatured": false
   },
   {
     "id": "r7777777-7777-7777-7777-777777777777",
-    "title": "Velvet Oat Latte",
-    "subtitle": "Smooth milk-forward daily cup",
+    "title": "Bengaluru Filter Cold Coffee",
+    "subtitle": "Thick & frothy blended filter coffee with milk & ice cream",
     "method": "latte",
     "level": "beginner",
     "bean": {
-      "id": "b7777777-7777-7777-7777-777777777777",
-      "name": "Brazil Santos",
-      "origin": "Brazil",
-      "variety": "Mundo Novo",
-      "process": "Natural",
+      "id": "b9999999-9999-9999-9999-999999999999",
+      "name": "Bengaluru Peaberry Decoction Blend",
+      "origin": "Karnataka, India",
+      "variety": "Peaberry & Chicory",
+      "process": "Washed",
       "altitudeMeters": 1200,
-      "recommendedRoast": "medium",
-      "notes": ["chocolate", "nutty", "caramel"]
+      "recommendedRoast": "dark",
+      "notes": ["caramel", "cocoa", "nutty"]
     },
-    "roast": "medium",
+    "roast": "dark",
     "pairing": {
       "id": "p7777777-7777-7777-7777-777777777771",
-      "name": "Hazelnut Cake",
-      "category": "Dessert",
-      "accentFlavor": "nutty"
+      "name": "Chilli Cheese Toast",
+      "category": "Café Savory",
+      "accentFlavor": "spice"
     },
     "metrics": {
-      "doseGrams": 18,
-      "waterMilliliters": 220,
-      "ratioText": "1:12",
-      "targetTimeSeconds": 120,
-      "temperatureCelsius": 93,
-      "milkTemperatureCelsius": 62,
+      "doseGrams": 20,
+      "waterMilliliters": 200,
+      "ratioText": "1:10",
+      "targetTimeSeconds": 90,
+      "temperatureCelsius": 85,
+      "milkTemperatureCelsius": null,
       "grindSize": "fine"
     },
     "steps": [
-      { "id": "s7777777-7777-7777-7777-777777777771", "order": 1, "title": "Pull Shot", "details": "Extract double shot.", "startSecond": 0, "endSecond": 30, "isActive": true },
-      { "id": "s7777777-7777-7777-7777-777777777772", "order": 2, "title": "Steam Oat Milk", "details": "Texture to 62C.", "startSecond": 30, "endSecond": 80, "isActive": false },
-      { "id": "s7777777-7777-7777-7777-777777777773", "order": 3, "title": "Pour", "details": "Combine and finish latte art.", "startSecond": 80, "endSecond": 120, "isActive": false }
+      { "id": "s7777777-7777-7777-7777-777777777771", "order": 1, "title": "Chocolate Rim", "details": "Swirl chocolate syrup in chilled glass.", "startSecond": 0, "endSecond": 20, "isActive": true },
+      { "id": "s7777777-7777-7777-7777-777777777772", "order": 2, "title": "Blend", "details": "Blend decoction, chilled milk, and ice cream for 45s.", "startSecond": 20, "endSecond": 70, "isActive": false },
+      { "id": "s7777777-7777-7777-7777-777777777773", "order": 3, "title": "Serve Frothy", "details": "Pour and crown with 2-inch thick velvet foam.", "startSecond": 70, "endSecond": 90, "isActive": false }
     ],
-    "tags": ["morningRitual"],
+    "tags": ["morningRitual", "beginnerFriendly", "featured"],
     "imageName": "ritual_latte",
     "isSaved": true,
     "isFeatured": false
