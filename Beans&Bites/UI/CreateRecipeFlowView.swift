@@ -245,6 +245,9 @@ struct CreateRecipeFlowView: View {
     @ObservedObject private var store = AppDataStore.shared
     @StateObject private var draft = RecipeComposerDraft()
 
+    /// When set, the composer pre-fills from a previously saved draft
+    var existingDraft: StructuredRecipeGuide? = nil
+
     @State private var draggedStepID: UUID?
     @State private var message: String?
     @State private var openDraftHint = false
@@ -303,6 +306,11 @@ struct CreateRecipeFlowView: View {
                 }
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(CoffeeTheme.accentPrimary)
+            }
+        }
+        .onAppear {
+            if let existing = existingDraft {
+                populateDraft(from: existing)
             }
         }
         .alert("Recipe", isPresented: .constant(message != nil), actions: {
@@ -1119,6 +1127,76 @@ struct CreateRecipeFlowView: View {
         store.updateCommunityDraft(buildCommunityDraft(includeContest: false))
         store.setSelectedTab(.brew)
         dismiss()
+    }
+
+    // MARK: - Restore from existing draft
+    private func populateDraft(from guide: StructuredRecipeGuide) {
+        draft.recipeName = guide.metadata.title == "Untitled Recipe" ? "" : guide.metadata.title
+        draft.shortDescription = guide.shortDescription
+        draft.roastLevel = guide.metadata.roastLevel
+
+        // Restore brewing method
+        let methodMap: [BrewMethod: BrewingMethodOption] = [
+            .v60: .v60,
+            .pourOver: .chemex,
+            .aeropress: .aeropress,
+            .frenchPress: .frenchPress,
+            .espresso: .espressoMachine,
+            .coldBrew: .coldBrew,
+            .latte: .espressoMachine,
+            .flatWhite: .espressoMachine
+        ]
+        draft.brewingMethod = methodMap[guide.metadata.method] ?? .v60
+
+        // Restore ingredients
+        if let coffeeIngredient = guide.ingredients.first(where: { $0.name.lowercased() == "coffee" }) {
+            draft.coffeeGrams = coffeeIngredient.amount
+        }
+        if let waterIngredient = guide.ingredients.first(where: { $0.name.lowercased() == "water" }) {
+            draft.waterML = waterIngredient.amount
+        }
+
+        // Restore brew time from keyInfo
+        let totalSecs = guide.keyInfo.brewTimeSeconds
+        draft.brewMinutes = "\(totalSecs / 60)"
+        draft.brewSeconds = "\(totalSecs % 60)"
+
+        // Restore instruction steps
+        if !guide.steps.isEmpty {
+            draft.instructionSteps = guide.steps.map { step in
+                InstructionStepDraft(
+                    title: step.title,
+                    details: step.instruction,
+                    timerSeconds: step.durationText.flatMap { str in
+                        str.replacingOccurrences(of: "s", with: "")
+                    } ?? ""
+                )
+            }
+        }
+
+        // Restore tasting notes
+        draft.selectedTastingNotes = Set(guide.metadata.flavorNotes.map { note -> String in
+            switch note {
+            case .nutty: return "Nutty"
+            case .chocolate: return "Chocolatey"
+            case .berry, .stoneFruit: return "Fruity"
+            case .floral: return "Floral"
+            case .caramel: return "Caramel"
+            case .citrus: return "Bright"
+            default: return ""
+            }
+        }.filter { !$0.isEmpty })
+
+        // Restore pairing
+        if let pairing = guide.optionalSections.pairingSuggestion {
+            draft.customPairing = pairing
+        }
+        if let extractionNote = guide.optionalSections.extractionNotes {
+            draft.pairingWhy = extractionNote
+        }
+        if let sommelierNote = guide.optionalSections.sommelierNote {
+            draft.customTastingNote = sommelierNote
+        }
     }
 
     private func publishRecipe() {

@@ -12,9 +12,11 @@ struct ProfileScreenView: View {
 
     @State private var contentTab: ProfileContentTab = .publishedRecipes
     @State private var showComposer = false
+    @State private var editingDraft: StructuredRecipeGuide? = nil
     @State private var showEditProfile = false
     @State private var showInsights = false
     @State private var showSignOutConfirm = false
+    @State private var structuredDrafts: [StructuredRecipeGuide] = []
 
     private var profile: ProfileData { store.profile }
 
@@ -32,10 +34,34 @@ struct ProfileScreenView: View {
     }
 
     private var hasDraft: Bool {
-        let draft = store.communityDraft
-        return !draft.coffeeOriginOrBlend.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-            || !draft.caption.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-            || draft.method != nil
+        !structuredDrafts.isEmpty
+    }
+
+    private func loadStructuredDrafts() {
+        let fm = FileManager.default
+        guard let doc = fm.urls(for: .documentDirectory, in: .userDomainMask).first else { return }
+        let url = doc.appendingPathComponent("structured_recipe_drafts").appendingPathExtension("json")
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        if let data = try? Data(contentsOf: url),
+           let saved = try? decoder.decode([StructuredRecipeGuide].self, from: data) {
+            structuredDrafts = saved
+        } else {
+            structuredDrafts = []
+        }
+    }
+
+    private func deleteStructuredDraft(id: UUID) {
+        structuredDrafts.removeAll { $0.id == id }
+        let fm = FileManager.default
+        guard let doc = fm.urls(for: .documentDirectory, in: .userDomainMask).first else { return }
+        let url = doc.appendingPathComponent("structured_recipe_drafts").appendingPathExtension("json")
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted]
+        encoder.dateEncodingStrategy = .iso8601
+        if let data = try? encoder.encode(structuredDrafts) {
+            try? data.write(to: url, options: .atomic)
+        }
     }
 
     private var savedPairings: [BrewRitual] {
@@ -80,6 +106,7 @@ struct ProfileScreenView: View {
             .background(CoffeeTheme.bgPrimary.ignoresSafeArea())
             .navigationTitle("Profile")
             .navigationBarTitleDisplayMode(.large)
+            .onAppear { loadStructuredDrafts() }
             .toolbar {
                 ToolbarItemGroup(placement: .topBarTrailing) {
                     // Insights
@@ -105,8 +132,13 @@ struct ProfileScreenView: View {
                     .accessibilityLabel("Edit profile")
                 }
             }
-            .sheet(isPresented: $showComposer) {
+            .sheet(isPresented: $showComposer, onDismiss: loadStructuredDrafts) {
                 CreateRecipeFlowView()
+                    .presentationDetents([.large])
+                    .presentationCornerRadius(32)
+            }
+            .sheet(item: $editingDraft, onDismiss: loadStructuredDrafts) { draft in
+                CreateRecipeFlowView(existingDraft: draft)
                     .presentationDetents([.large])
                     .presentationCornerRadius(32)
             }
@@ -256,16 +288,36 @@ struct ProfileScreenView: View {
             }
 
         case .drafts:
-            if hasDraft {
-                draftCard
-            } else {
+            if structuredDrafts.isEmpty {
                 emptyPlaceholder(
                     icon: "pencil.and.list.clipboard",
-                    title: "No Active Drafts",
-                    message: "In-progress recipes are saved here automatically.",
+                    title: "No Saved Drafts",
+                    message: "Recipes you save as drafts will appear here.",
                     ctaTitle: "Start New Recipe"
                 ) {
                     showComposer = true
+                }
+            } else {
+                VStack(spacing: 10) {
+                    ForEach(structuredDrafts) { draft in
+                        structuredDraftCard(draft)
+                    }
+                    Button {
+                        showComposer = true
+                    } label: {
+                        Label("New Recipe", systemImage: "plus")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(CoffeeTheme.accentPrimary)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 12)
+                            .background(CoffeeTheme.accentPrimary.opacity(0.08))
+                            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                    .stroke(CoffeeTheme.accentPrimary.opacity(0.35), lineWidth: 1)
+                            )
+                    }
+                    .buttonStyle(.plain)
                 }
             }
         }
@@ -416,6 +468,158 @@ struct ProfileScreenView: View {
             RoundedRectangle(cornerRadius: 14, style: .continuous)
                 .stroke(CoffeeTheme.border, lineWidth: 0.8)
         )
+    }
+
+    private func structuredDraftCard(_ draft: StructuredRecipeGuide) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            // Header
+            HStack(alignment: .top, spacing: 12) {
+                // Method icon circle
+                ZStack {
+                    Circle()
+                        .fill(CoffeeTheme.accentPrimary.opacity(0.12))
+                        .frame(width: 44, height: 44)
+                    Image(systemName: draftMethodIcon(draft.metadata.method))
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundStyle(CoffeeTheme.accentPrimary)
+                }
+
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(draft.metadata.title)
+                        .font(.subheadline.weight(.bold))
+                        .foregroundStyle(CoffeeTheme.textPrimary)
+                        .lineLimit(1)
+
+                    HStack(spacing: 6) {
+                        Text(draft.metadata.method.rawValue.capitalized)
+                            .font(.caption2.weight(.semibold))
+                            .foregroundStyle(CoffeeTheme.accentPrimary)
+                            .padding(.horizontal, 7)
+                            .padding(.vertical, 3)
+                            .background(CoffeeTheme.accentPrimary.opacity(0.1))
+                            .clipShape(Capsule())
+
+                        Text("\(draft.steps.count) steps")
+                            .font(.caption2)
+                            .foregroundStyle(CoffeeTheme.textSecondary)
+
+                        Text("•")
+                            .font(.caption2)
+                            .foregroundStyle(CoffeeTheme.textTertiary)
+
+                        Text(draftTimeAgo(draft.createdAt))
+                            .font(.caption2)
+                            .foregroundStyle(CoffeeTheme.textTertiary)
+                    }
+                }
+
+                Spacer()
+
+                // Delete button
+                Button {
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        deleteStructuredDraft(id: draft.id)
+                    }
+                } label: {
+                    Image(systemName: "trash")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(CoffeeTheme.textTertiary)
+                        .padding(8)
+                        .background(CoffeeTheme.cardAlt)
+                        .clipShape(Circle())
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(14)
+
+            if !draft.shortDescription.isEmpty {
+                Divider().padding(.horizontal, 14)
+
+                Text(draft.shortDescription)
+                    .font(.caption)
+                    .foregroundStyle(CoffeeTheme.textSecondary)
+                    .lineLimit(2)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 10)
+            }
+
+            // Steps preview
+            if !draft.steps.isEmpty {
+                Divider().padding(.horizontal, 14)
+
+                HStack(spacing: 6) {
+                    ForEach(draft.steps.prefix(3)) { step in
+                        HStack(spacing: 4) {
+                            Circle()
+                                .fill(CoffeeTheme.accentPrimary)
+                                .frame(width: 16, height: 16)
+                                .overlay(
+                                    Text("\(step.stepNumber)")
+                                        .font(.system(size: 8, weight: .bold))
+                                        .foregroundStyle(.white)
+                                )
+                            Text(step.title)
+                                .font(.caption2.weight(.medium))
+                                .foregroundStyle(CoffeeTheme.textPrimary)
+                                .lineLimit(1)
+                        }
+                    }
+                    if draft.steps.count > 3 {
+                        Text("+\(draft.steps.count - 3) more")
+                            .font(.caption2)
+                            .foregroundStyle(CoffeeTheme.textTertiary)
+                    }
+                    Spacer()
+                }
+                .padding(.horizontal, 14)
+                .padding(.vertical, 10)
+            }
+
+            // Edit CTA
+            Divider().padding(.horizontal, 14)
+
+            Button {
+                editingDraft = draft
+            } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: "pencil")
+                        .font(.system(size: 12, weight: .semibold))
+                    Text("Continue Editing")
+                        .font(.subheadline.weight(.semibold))
+                }
+                .foregroundStyle(CoffeeTheme.accentPrimary)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 12)
+            }
+            .buttonStyle(.plain)
+            .padding(.horizontal, 14)
+        }
+        .background(CoffeeTheme.card)
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .stroke(CoffeeTheme.accentPrimary.opacity(0.25), lineWidth: 1)
+        )
+    }
+
+    private func draftMethodIcon(_ method: BrewMethod) -> String {
+        switch method {
+        case .v60, .pourOver: return "drop.circle.fill"
+        case .aeropress: return "cylinder.split.1x2.fill"
+        case .frenchPress: return "water.waves"
+        case .espresso: return "flame.fill"
+        case .coldBrew: return "snowflake"
+        case .latte, .flatWhite: return "cup.and.saucer.fill"
+        }
+    }
+
+    private func draftTimeAgo(_ date: Date) -> String {
+        let seconds = max(1, Int(Date().timeIntervalSince(date)))
+        let hour = 3600
+        let day = 86400
+        if seconds < hour { return "\(max(1, seconds / 60))m ago" }
+        if seconds < day { return "\(seconds / hour)h ago" }
+        return "\(seconds / day)d ago"
     }
 
     private var draftCard: some View {
