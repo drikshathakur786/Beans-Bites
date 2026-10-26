@@ -103,15 +103,27 @@ struct BrewDetailView: View {
 
                 Spacer()
 
-                Image(ritual.imageName)
-                    .resizable()
-                    .scaledToFill()
-                    .frame(width: 94, height: 94)
-                    .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
-                    .overlay(
+                if let _ = UIImage(named: ritual.imageName) {
+                    Image(ritual.imageName)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: 104, height: 104)
+                        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                                .stroke(Color.white.opacity(0.6), lineWidth: 1.5)
+                        )
+                        .shadow(color: Color.black.opacity(0.15), radius: 8, x: 0, y: 4)
+                } else {
+                    ZStack {
                         RoundedRectangle(cornerRadius: 24, style: .continuous)
-                            .stroke(Color.white.opacity(0.6), lineWidth: 1)
-                    )
+                            .fill(CoffeeTheme.cardAlt)
+                            .frame(width: 104, height: 104)
+                        Image(systemName: "cup.and.saucer.fill")
+                            .font(.system(size: 36))
+                            .foregroundStyle(CoffeeTheme.accentPrimary)
+                    }
+                }
             }
             .padding(20)
         }

@@ -153,14 +153,17 @@ private final class RecipeComposerDraft: ObservableObject {
     ]
 
     let pairingSuggestions = [
+        "Warm Bun Maska",
+        "Medu Vada & Chutney",
+        "Ghee Mysore Pak",
+        "Shrewsbury Biscuits",
+        "Cardamom Nankhatai",
+        "Hot Samosa",
+        "Dark Chocolate",
         "Almond Croissant",
         "Cheesecake",
-        "Dark Chocolate",
         "Brownie",
-        "Pancakes",
-        "Tiramisu",
-        "Ice Cream",
-        "Donut"
+        "Tiramisu"
     ]
 
     let tastingSuggestions = [

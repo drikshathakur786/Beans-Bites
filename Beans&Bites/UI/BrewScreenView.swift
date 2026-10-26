@@ -311,29 +311,55 @@ struct BrewScreenView: View {
     // MARK: - Recipe Grid Card
     private func recipeGridCard(_ ritual: BrewRitual) -> some View {
         VStack(alignment: .leading, spacing: 10) {
-            // Top Row: Method Icon Pill & Favorite Heart
-            HStack {
-                ZStack {
-                    Circle()
-                        .fill(CoffeeTheme.accentPrimary.opacity(0.12))
-                        .frame(width: 34, height: 34)
-                    Image(systemName: methodIcon(for: ritual.method))
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(CoffeeTheme.accentPrimary)
+            // Recipe Image Thumbnail with Overlaid Method Icon & Favorite Button
+            ZStack(alignment: .topTrailing) {
+                if let _ = UIImage(named: ritual.imageName) {
+                    Image(ritual.imageName)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(height: 105)
+                        .frame(maxWidth: .infinity)
+                        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                } else {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .fill(CoffeeTheme.cardAlt)
+                            .frame(height: 105)
+                        Image(systemName: methodIcon(for: ritual.method))
+                            .font(.system(size: 28))
+                            .foregroundStyle(CoffeeTheme.accentPrimary.opacity(0.6))
+                    }
                 }
 
-                Spacer()
+                HStack {
+                    ZStack {
+                        Circle()
+                            .fill(Color.black.opacity(0.45))
+                            .frame(width: 30, height: 30)
+                        Image(systemName: methodIcon(for: ritual.method))
+                            .font(.system(size: 13, weight: .bold))
+                            .foregroundStyle(CoffeeTheme.accentWarmGold)
+                    }
 
-                Button {
-                    let generator = UIImpactFeedbackGenerator(style: .light)
-                    generator.impactOccurred()
-                    store.toggleSave(ritualID: ritual.id)
-                } label: {
-                    Image(systemName: ritual.isSaved ? "heart.fill" : "heart")
-                        .font(.system(size: 16))
-                        .foregroundStyle(ritual.isSaved ? Color.red : CoffeeTheme.textTertiary)
+                    Spacer()
+
+                    Button {
+                        let generator = UIImpactFeedbackGenerator(style: .light)
+                        generator.impactOccurred()
+                        store.toggleSave(ritualID: ritual.id)
+                    } label: {
+                        ZStack {
+                            Circle()
+                                .fill(Color.black.opacity(0.45))
+                                .frame(width: 30, height: 30)
+                            Image(systemName: ritual.isSaved ? "heart.fill" : "heart")
+                                .font(.system(size: 13))
+                                .foregroundStyle(ritual.isSaved ? Color.red : Color.white)
+                        }
+                    }
+                    .buttonStyle(PlainButtonStyle())
                 }
-                .buttonStyle(PlainButtonStyle())
+                .padding(8)
             }
 
             // Recipe Title

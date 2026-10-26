@@ -232,14 +232,32 @@ struct HomeScreenView: View {
         }
         .padding(20)
         .background(
-            LinearGradient(
-                colors: [
-                    Color(hex: "3D2314"),
-                    Color(hex: "24140B")
-                ],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
+            ZStack {
+                if let _ = UIImage(named: featured.imageName) {
+                    Image(featured.imageName)
+                        .resizable()
+                        .scaledToFill()
+                        .overlay(
+                            LinearGradient(
+                                colors: [
+                                    Color(hex: "2A180D").opacity(0.85),
+                                    Color(hex: "180C06").opacity(0.95)
+                                ],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                        )
+                } else {
+                    LinearGradient(
+                        colors: [
+                            Color(hex: "3D2314"),
+                            Color(hex: "24140B")
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                }
+            }
         )
         .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
         .overlay(
