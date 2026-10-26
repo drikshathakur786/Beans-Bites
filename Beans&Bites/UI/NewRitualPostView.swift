@@ -91,8 +91,19 @@ struct NewRitualPostView: View {
                 .padding(.vertical, 16)
                 .padding(.bottom, 30)
             }
+            .scrollDismissesKeyboard(.interactively)
         }
         .toolbar(.hidden, for: .navigationBar)
+        .toolbar {
+            ToolbarItemGroup(placement: .keyboard) {
+                Spacer()
+                Button("Done") {
+                    UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+                }
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(Color(hex: "C47A2C"))
+            }
+        }
         .onAppear(perform: loadDraft)
     }
 
