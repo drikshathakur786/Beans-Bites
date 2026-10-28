@@ -12,16 +12,21 @@ struct HomeScreenView: View {
     private var featured: BrewRitual { store.featuredRitual }
     @State private var showFeaturedDetail: Bool = false
     @State private var showBaristaSheet: Bool = false
-    @State private var showScanner: Bool = false
     @State private var selectedRitualForBrew: BrewRitual?
 
     private var streakDays: Int { max(1, min(30, store.profile.stats.ritualsCount / 3)) }
 
-    private var greetingText: String {
+    /// Time-based greeting — short form used as nav title (no name, avoids truncation)
+    private var dayGreeting: String {
         let hour = Calendar.current.component(.hour, from: Date())
         if hour < 12 { return "Good Morning" }
         if hour < 17 { return "Good Afternoon" }
         return "Good Evening"
+    }
+
+    private var firstName: String {
+        store.profile.user.displayName
+            .components(separatedBy: " ").first ?? "Brewer"
     }
 
     private var formattedDate: String {
@@ -54,47 +59,9 @@ struct HomeScreenView: View {
                 .padding(.bottom, 64)
             }
             .background(CoffeeTheme.bgPrimary.ignoresSafeArea())
-            .navigationTitle("Today")
+            .navigationTitle(dayGreeting)
             .navigationBarTitleDisplayMode(.large)
-            .toolbar {
-                ToolbarItemGroup(placement: .topBarTrailing) {
-                    // Camera Bag Scanner
-                    Button {
-                        let generator = UIImpactFeedbackGenerator(style: .medium)
-                        generator.impactOccurred()
-                        showScanner = true
-                    } label: {
-                        Image(systemName: "camera.viewfinder")
-                            .font(.system(size: 16, weight: .semibold))
-                            .foregroundStyle(CoffeeTheme.accentPrimary)
-                    }
-                    .accessibilityLabel("Scan coffee bag")
 
-                    // Streak Badge
-                    HStack(spacing: 4) {
-                        Image(systemName: "flame.fill")
-                            .font(.system(size: 13, weight: .bold))
-                            .foregroundStyle(CoffeeTheme.accentWarmGold)
-                        Text("\(streakDays)d")
-                            .font(.system(size: 13, weight: .bold))
-                            .foregroundStyle(CoffeeTheme.textPrimary)
-                    }
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(CoffeeTheme.cardAlt)
-                    .clipShape(Capsule())
-
-                    // Profile Button
-                    Button {
-                        store.setSelectedTab(.profile)
-                    } label: {
-                        Image(systemName: "person.crop.circle.fill")
-                            .font(.system(size: 24))
-                            .foregroundStyle(CoffeeTheme.accentPrimary)
-                    }
-                    .accessibilityLabel("View profile")
-                }
-            }
             .navigationDestination(isPresented: $showFeaturedDetail) {
                 BrewDetailView(ritualID: featured.id)
             }
@@ -111,23 +78,23 @@ struct HomeScreenView: View {
                 .presentationDetents([.medium, .large])
                 .presentationCornerRadius(32)
             }
-            .sheet(isPresented: $showScanner) {
-                CoffeeBagScannerView()
-            }
         }
     }
 
     // MARK: - Subheader Greeting
     private var subHeaderGreeting: some View {
-        VStack(alignment: .leading, spacing: 2) {
+        HStack(spacing: 6) {
+            Text(firstName)
+                .font(.system(size: 11, weight: .bold))
+                .tracking(1.0)
+                .foregroundStyle(CoffeeTheme.textSecondary)
+            Text("·")
+                .font(.system(size: 11, weight: .bold))
+                .foregroundStyle(CoffeeTheme.textTertiary)
             Text(formattedDate)
                 .font(.system(size: 11, weight: .bold))
                 .tracking(1.2)
                 .foregroundStyle(CoffeeTheme.textTertiary)
-
-            Text("\(greetingText), \(store.profile.user.displayName.components(separatedBy: " ").first ?? "Brewer")")
-                .font(.subheadline.weight(.medium))
-                .foregroundStyle(CoffeeTheme.textSecondary)
         }
     }
 

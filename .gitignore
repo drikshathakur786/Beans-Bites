@@ -21,3 +21,4 @@ Pods/
 .env
 .env.*
 !.env.example
+*.pptx
