@@ -2,21 +2,15 @@
 
 <br/>
 
-```
-  ☕  B E A N S  &  B I T E S
-```
+# ☕ Beans & Bites
 
 **Your personal coffee ritual, perfected.**
 
 *A premium iOS app for specialty coffee lovers — guided brews, taste tracking, food pairings, and a community built around the craft.*
 
-<br/>
+`Swift 5` &nbsp;·&nbsp; `SwiftUI` &nbsp;·&nbsp; `SwiftData` &nbsp;·&nbsp; `MVVM` &nbsp;·&nbsp; `iOS 17+` &nbsp;·&nbsp; `Fully Offline`
 
-![Swift](https://img.shields.io/badge/Swift-5.0-F05138?style=flat-square&logo=swift&logoColor=white)
-![SwiftUI](https://img.shields.io/badge/SwiftUI-iOS_17+-0A84FF?style=flat-square&logo=apple&logoColor=white)
-![SwiftData](https://img.shields.io/badge/SwiftData-Offline_First-6E40C9?style=flat-square)
-![Architecture](https://img.shields.io/badge/Architecture-MVVM-B95D24?style=flat-square)
-![License](https://img.shields.io/badge/License-Academic-8A7060?style=flat-square)
+<br/>
 
 </div>
 
@@ -137,7 +131,7 @@ Built over **8 weeks** as an Exploratory Project at Chitkara University, Punjab.
 | Driksha Thakur | Features & Architecture |
 | Mahi Awasthi | Data Modeling & Community |
 
-**Supervised by** Dr. Swati Goel — Department of Computer Science & Engineering
+**Supervised by** Dr. Swati Goel
 
 ---
 
@@ -153,7 +147,5 @@ Built over **8 weeks** as an Exploratory Project at Chitkara University, Punjab.
 <div align="center">
 
 *Built with caffeine, patience, and an unreasonable love for specialty coffee.*
-
-**Beans & Bites** — Department of CSE, Chitkara University, Punjab
 
 </div>
