@@ -120,30 +120,6 @@ Beans&Bites/
 
 ---
 
-## The Team
-
-Built over **8 weeks** as an Exploratory Project at Chitkara University, Punjab.
-
-| Name | Role |
-|---|---|
-| Saurabh Singh | Lead Developer |
-| Seerat Sharma | UI/UX & Features |
-| Driksha Thakur | Features & Architecture |
-| Mahi Awasthi | Data Modeling & Community |
-
-**Supervised by** Dr. Swati Goel
-
----
-
-## Branch Strategy
-
-| Branch | Purpose |
-|---|---|
-| `main` | Stable, reviewed code |
-| `drix` | Driksha's feature branch |
-
----
-
 <div align="center">
 
 *Built with caffeine, patience, and an unreasonable love for specialty coffee.*
