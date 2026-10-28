@@ -16,30 +16,17 @@ struct HomeScreenView: View {
 
     private var streakDays: Int { max(1, min(30, store.profile.stats.ritualsCount / 3)) }
 
-    /// Changes every day of the week — coffee-lover flavour, with the user's first name
+    /// Time-based greeting — short form used as nav title (no name, avoids truncation)
     private var dayGreeting: String {
-        let firstName = store.profile.user.displayName
-            .components(separatedBy: " ").first ?? "Brewer"
-        let weekday = Calendar.current.component(.weekday, from: Date())
-        let phrase: String
-        switch weekday {
-        case 1: phrase = "Bonjour"           // Sunday
-        case 2: phrase = "Rise & Grind"      // Monday
-        case 3: phrase = "Bon Café"          // Tuesday
-        case 4: phrase = "Stay Grounded"     // Wednesday
-        case 5: phrase = "Espresso Yourself" // Thursday
-        case 6: phrase = "TGIF — Brew It"    // Friday
-        case 7: phrase = "Slow Pour Saturday" // Saturday
-        default: phrase = "Bonjour"
-        }
-        return "\(phrase), \(firstName)"
-    }
-
-    private var greetingText: String {
         let hour = Calendar.current.component(.hour, from: Date())
         if hour < 12 { return "Good Morning" }
         if hour < 17 { return "Good Afternoon" }
         return "Good Evening"
+    }
+
+    private var firstName: String {
+        store.profile.user.displayName
+            .components(separatedBy: " ").first ?? "Brewer"
     }
 
     private var formattedDate: String {
@@ -74,33 +61,7 @@ struct HomeScreenView: View {
             .background(CoffeeTheme.bgPrimary.ignoresSafeArea())
             .navigationTitle(dayGreeting)
             .navigationBarTitleDisplayMode(.large)
-            .toolbar {
-                ToolbarItemGroup(placement: .topBarTrailing) {
-                    // Streak Badge
-                    HStack(spacing: 4) {
-                        Image(systemName: "flame.fill")
-                            .font(.system(size: 13, weight: .bold))
-                            .foregroundStyle(CoffeeTheme.accentWarmGold)
-                        Text("\(streakDays)d")
-                            .font(.system(size: 13, weight: .bold))
-                            .foregroundStyle(CoffeeTheme.textPrimary)
-                    }
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(CoffeeTheme.cardAlt)
-                    .clipShape(Capsule())
 
-                    // Profile Button
-                    Button {
-                        store.setSelectedTab(.profile)
-                    } label: {
-                        Image(systemName: "person.crop.circle.fill")
-                            .font(.system(size: 24))
-                            .foregroundStyle(CoffeeTheme.accentPrimary)
-                    }
-                    .accessibilityLabel("View profile")
-                }
-            }
             .navigationDestination(isPresented: $showFeaturedDetail) {
                 BrewDetailView(ritualID: featured.id)
             }
@@ -122,15 +83,18 @@ struct HomeScreenView: View {
 
     // MARK: - Subheader Greeting
     private var subHeaderGreeting: some View {
-        VStack(alignment: .leading, spacing: 2) {
+        HStack(spacing: 6) {
+            Text(firstName)
+                .font(.system(size: 11, weight: .bold))
+                .tracking(1.0)
+                .foregroundStyle(CoffeeTheme.textSecondary)
+            Text("·")
+                .font(.system(size: 11, weight: .bold))
+                .foregroundStyle(CoffeeTheme.textTertiary)
             Text(formattedDate)
                 .font(.system(size: 11, weight: .bold))
                 .tracking(1.2)
                 .foregroundStyle(CoffeeTheme.textTertiary)
-
-            Text("\(greetingText), \(store.profile.user.displayName.components(separatedBy: " ").first ?? "Brewer")")
-                .font(.subheadline.weight(.medium))
-                .foregroundStyle(CoffeeTheme.textSecondary)
         }
     }
 
