@@ -18,6 +18,10 @@ struct ProfileScreenView: View {
     @State private var showSignOutConfirm = false
     @State private var structuredDrafts: [StructuredRecipeGuide] = []
 
+    // Delete flow
+    @State private var postPendingDelete: CommunityPost? = nil
+    @State private var showDeleteConfirm = false
+
     private var profile: ProfileData { store.profile }
 
     private var allKnownRituals: [BrewRitual] {
@@ -156,6 +160,17 @@ struct ProfileScreenView: View {
                 }
                 Button("Cancel", role: .cancel) { }
             }
+            .alert("Delete Recipe?", isPresented: $showDeleteConfirm, presenting: postPendingDelete) { post in
+                Button("Delete", role: .destructive) {
+                    store.deletePost(id: post.id)
+                    postPendingDelete = nil
+                }
+                Button("Cancel", role: .cancel) {
+                    postPendingDelete = nil
+                }
+            } message: { post in
+                Text(""\(post.ritual.title)" will be permanently removed from your profile and the community feed.")
+            }
         }
     }
 
@@ -250,6 +265,19 @@ struct ProfileScreenView: View {
                             publishedRecipeCard(post)
                         }
                         .buttonStyle(PressableBounceButtonStyle())
+                        .contextMenu {
+                            Button(role: .destructive) {
+                                postPendingDelete = post
+                                showDeleteConfirm = true
+                            } label: {
+                                Label("Delete Recipe", systemImage: "trash")
+                            }
+                        } preview: {
+                            publishedRecipeCard(post)
+                                .padding(12)
+                                .background(CoffeeTheme.card)
+                                .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+                        }
                     }
                 }
             }
@@ -326,12 +354,22 @@ struct ProfileScreenView: View {
     // MARK: - Inset Grouped Cards
     private func publishedRecipeCard(_ post: CommunityPost) -> some View {
         HStack(spacing: 14) {
-            Image(post.ritual.imageName)
-                .resizable()
-                .scaledToFill()
-                .frame(width: 70, height: 70)
-                .clipped()
-                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            Group {
+                if let uiImg = UIImage.recipeImage(named: post.ritual.imageName) {
+                    Image(uiImage: uiImg)
+                        .resizable()
+                        .scaledToFill()
+                } else {
+                    ZStack {
+                        CoffeeTheme.cardAlt
+                        Image(systemName: "cup.and.saucer.fill")
+                            .foregroundStyle(CoffeeTheme.accentPrimary.opacity(0.6))
+                    }
+                }
+            }
+            .frame(width: 70, height: 70)
+            .clipped()
+            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(post.ritual.title)
@@ -376,12 +414,22 @@ struct ProfileScreenView: View {
 
     private func savedRitualCard(_ ritual: BrewRitual) -> some View {
         HStack(spacing: 14) {
-            Image(ritual.imageName)
-                .resizable()
-                .scaledToFill()
-                .frame(width: 70, height: 70)
-                .clipped()
-                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            Group {
+                if let uiImg = UIImage.recipeImage(named: ritual.imageName) {
+                    Image(uiImage: uiImg)
+                        .resizable()
+                        .scaledToFill()
+                } else {
+                    ZStack {
+                        CoffeeTheme.cardAlt
+                        Image(systemName: "cup.and.saucer.fill")
+                            .foregroundStyle(CoffeeTheme.accentPrimary.opacity(0.6))
+                    }
+                }
+            }
+            .frame(width: 70, height: 70)
+            .clipped()
+            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(ritual.title)

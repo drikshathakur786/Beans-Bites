@@ -200,8 +200,8 @@ struct HomeScreenView: View {
         .padding(20)
         .background(
             ZStack {
-                if let _ = UIImage(named: featured.imageName) {
-                    Image(featured.imageName)
+                if let uiImg = UIImage.recipeImage(named: featured.imageName) {
+                    Image(uiImage: uiImg)
                         .resizable()
                         .scaledToFill()
                         .overlay(

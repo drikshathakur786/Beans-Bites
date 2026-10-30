@@ -4,6 +4,7 @@
 //
 
 import SwiftUI
+import UIKit
 
 struct BrewDetailView: View {
     @ObservedObject private var store = AppDataStore.shared
@@ -12,13 +13,41 @@ struct BrewDetailView: View {
 
     let ritualID: UUID
 
-    private let bgTop = Color(hex: "F3E9DD")
-    private let bgBottom = Color(hex: "EDE0D3")
-    private let surfaceLevel1 = Color(hex: "E9D8C8")
-    private let surfaceLevel2 = Color(hex: "E3CFBD")
-    private let surfaceLevel3 = Color(hex: "F4E6D9")
-    private let warmBorder = Color(hex: "D8C1AE")
-    private let deepMocha = Color(hex: "7A4E2B")
+    private let bgTop = Color(uiColor: UIColor { trait in
+        trait.userInterfaceStyle == .dark
+            ? UIColor(Color(hex: "1A110A"))
+            : UIColor(Color(hex: "F3E9DD"))
+    })
+    private let bgBottom = Color(uiColor: UIColor { trait in
+        trait.userInterfaceStyle == .dark
+            ? UIColor(Color(hex: "130D08"))
+            : UIColor(Color(hex: "EDE0D3"))
+    })
+    private let surfaceLevel1 = Color(uiColor: UIColor { trait in
+        trait.userInterfaceStyle == .dark
+            ? UIColor(Color(hex: "231811"))
+            : UIColor(Color(hex: "E9D8C8"))
+    })
+    private let surfaceLevel2 = Color(uiColor: UIColor { trait in
+        trait.userInterfaceStyle == .dark
+            ? UIColor(Color(hex: "2A1D14"))
+            : UIColor(Color(hex: "E3CFBD"))
+    })
+    private let surfaceLevel3 = Color(uiColor: UIColor { trait in
+        trait.userInterfaceStyle == .dark
+            ? UIColor(Color(hex: "1F1510"))
+            : UIColor(Color(hex: "F4E6D9"))
+    })
+    private let warmBorder = Color(uiColor: UIColor { trait in
+        trait.userInterfaceStyle == .dark
+            ? UIColor(white: 1, alpha: 0.12)
+            : UIColor(Color(hex: "D8C1AE"))
+    })
+    private let deepMocha = Color(uiColor: UIColor { trait in
+        trait.userInterfaceStyle == .dark
+            ? UIColor(Color(hex: "D19046"))
+            : UIColor(Color(hex: "7A4E2B"))
+    })
 
     private var ritual: BrewRitual? {
         let official = store.curatedRituals + store.trendingRituals + [store.featuredRitual]
@@ -103,8 +132,8 @@ struct BrewDetailView: View {
 
                 Spacer()
 
-                if let _ = UIImage(named: ritual.imageName) {
-                    Image(ritual.imageName)
+                if let uiImg = UIImage.recipeImage(named: ritual.imageName) {
+                    Image(uiImage: uiImg)
                         .resizable()
                         .scaledToFill()
                         .frame(width: 104, height: 104)

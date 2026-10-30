@@ -391,7 +391,7 @@ struct CommunityScreenView: View {
 
     @ViewBuilder
     private func recipeImageView(named imageName: String) -> some View {
-        if let image = UIImage(named: imageName) {
+        if let image = UIImage.recipeImage(named: imageName) {
             Image(uiImage: image)
                 .resizable()
                 .scaledToFill()

@@ -346,6 +346,9 @@ struct CreateRecipeFlowView: View {
         .sheet(isPresented: $showHeroImagePicker) {
             RecipeImagePicker(sourceType: heroPickerSource) { image in
                 pickedHeroImage = image
+                if let savedName = saveRecipeImage(image) {
+                    draft.selectedImageName = savedName
+                }
             }
         }
     }
@@ -1196,6 +1199,22 @@ struct CreateRecipeFlowView: View {
         }
         if let sommelierNote = guide.optionalSections.sommelierNote {
             draft.customTastingNote = sommelierNote
+        }
+    }
+
+    /// Saves a picked UIImage as a JPEG to the Documents directory and returns its filename.
+    /// The filename is stored in `draft.selectedImageName` so it flows through the publish pipeline.
+    private func saveRecipeImage(_ image: UIImage) -> String? {
+        guard let data = image.jpegData(compressionQuality: 0.82) else { return nil }
+        let filename = "recipe_image_\(UUID().uuidString).jpg"
+        let fm = FileManager.default
+        guard let docs = fm.urls(for: .documentDirectory, in: .userDomainMask).first else { return nil }
+        let url = docs.appendingPathComponent(filename)
+        do {
+            try data.write(to: url, options: .atomic)
+            return filename
+        } catch {
+            return nil
         }
     }
 
