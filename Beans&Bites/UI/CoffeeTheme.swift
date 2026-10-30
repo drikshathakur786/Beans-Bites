@@ -64,6 +64,17 @@ struct CoffeeTheme {
     static let shadowElevated = Color(hex: "26150A").opacity(0.10)
 }
 
+// MARK: - Recipe Image Loading
+/// Loads an image by name from the asset catalog first, then falls back to the Documents directory.
+/// User-picked recipe photos are saved as JPEGs in Documents using a UUID filename.
+extension UIImage {
+    static func recipeImage(named name: String) -> UIImage? {
+        if let asset = UIImage(named: name) { return asset }
+        guard let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else { return nil }
+        return UIImage(contentsOfFile: docs.appendingPathComponent(name).path)
+    }
+}
+
 // MARK: - Color Hex Initializer
 extension Color {
     init(hex: String) {

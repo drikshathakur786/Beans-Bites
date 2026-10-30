@@ -434,6 +434,24 @@ final class AppDataStore: ObservableObject {
         return newPost
     }
 
+    /// Deletes a community post by ID.
+    /// Also removes any user-picked recipe image saved in the Documents directory.
+    func deletePost(id: UUID) {
+        guard let post = communityPosts.first(where: { $0.id == id }) else { return }
+
+        // Clean up a user-picked photo saved to Documents (UUID-named JPEGs).
+        let imageName = post.ritual.imageName
+        if imageName.hasPrefix("recipe_image_") {
+            if let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first {
+                let url = docs.appendingPathComponent(imageName)
+                try? FileManager.default.removeItem(at: url)
+            }
+        }
+
+        communityPosts.removeAll { $0.id == id }
+        saveAppState()
+    }
+
     func logBrew(for ritualID: UUID, rating: Int) {
         let allRituals = curatedRituals + trendingRituals + [featuredRitual] + communityPosts.map(\.ritual)
         guard let ritual = allRituals.first(where: { $0.id == ritualID }) else {

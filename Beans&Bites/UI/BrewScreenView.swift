@@ -313,8 +313,8 @@ struct BrewScreenView: View {
         VStack(alignment: .leading, spacing: 10) {
             // Recipe Image Thumbnail with Overlaid Method Icon & Favorite Button
             ZStack(alignment: .topTrailing) {
-                if let _ = UIImage(named: ritual.imageName) {
-                    Image(ritual.imageName)
+                if let uiImg = UIImage.recipeImage(named: ritual.imageName) {
+                    Image(uiImage: uiImg)
                         .resizable()
                         .scaledToFill()
                         .frame(height: 105)
