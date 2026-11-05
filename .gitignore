@@ -22,3 +22,6 @@ Pods/
 .env.*
 !.env.example
 *.pptx
+# Office / Word documents and temp files
+~$*
+*.docx

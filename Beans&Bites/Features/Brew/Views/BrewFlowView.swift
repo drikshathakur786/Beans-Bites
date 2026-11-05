@@ -13,9 +13,11 @@ struct BrewFlowView: View {
     var ritual: BrewRitual?
 
     private let methodCards: [BrewMethod] = [.espresso, .v60, .frenchPress, .coldBrew, .aeropress, .latte, .flatWhite, .pourOver]
+    private let initialStage: BrewFlowViewModel.BrewStage?
 
-    init(ritual: BrewRitual? = nil) {
+    init(ritual: BrewRitual? = nil, initialStage: BrewFlowViewModel.BrewStage? = nil) {
         self.ritual = ritual
+        self.initialStage = initialStage
     }
 
     var body: some View {
@@ -65,6 +67,9 @@ struct BrewFlowView: View {
                 if let ritual {
                     vm.configureWithRitual(ritual)
                 }
+                if let initialStage {
+                    vm.stage = initialStage
+                }
             }
         }
     }
@@ -72,32 +77,41 @@ struct BrewFlowView: View {
     // MARK: - Stage Progress Bar
     private var stageProgressBar: some View {
         HStack(spacing: 8) {
-            stageStepPill(label: "Setup", isActive: vm.stage == .methodSelection || vm.stage == .setup, isCompleted: vm.stage == .guided || vm.stage == .tasteLog)
-            stageStepPill(label: "Brew", isActive: vm.stage == .guided, isCompleted: vm.stage == .tasteLog)
-            stageStepPill(label: "Taste", isActive: vm.stage == .tasteLog, isCompleted: false)
+            stageStepPill(label: "Setup", targetStage: .setup, isActive: vm.stage == .methodSelection || vm.stage == .setup, isCompleted: vm.stage == .guided || vm.stage == .tasteLog)
+            stageStepPill(label: "Brew", targetStage: .guided, isActive: vm.stage == .guided, isCompleted: vm.stage == .tasteLog)
+            stageStepPill(label: "Taste", targetStage: .tasteLog, isActive: vm.stage == .tasteLog, isCompleted: false)
         }
         .padding(.vertical, 4)
     }
 
-    private func stageStepPill(label: String, isActive: Bool, isCompleted: Bool) -> some View {
-        HStack(spacing: 5) {
-            if isCompleted {
-                Image(systemName: "checkmark")
-                    .font(.caption2.weight(.bold))
+    private func stageStepPill(label: String, targetStage: BrewFlowViewModel.BrewStage, isActive: Bool, isCompleted: Bool) -> some View {
+        Button {
+            let generator = UIImpactFeedbackGenerator(style: .light)
+            generator.impactOccurred()
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                vm.stage = targetStage
             }
-            Text(label)
-                .font(.caption2.weight(.bold))
-                .tracking(0.6)
+        } label: {
+            HStack(spacing: 5) {
+                if isCompleted {
+                    Image(systemName: "checkmark")
+                        .font(.caption2.weight(.bold))
+                }
+                Text(label)
+                    .font(.caption2.weight(.bold))
+                    .tracking(0.6)
+            }
+            .foregroundStyle(isActive || isCompleted ? .white : CoffeeTheme.textTertiary)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 8)
+            .background(isActive ? CoffeeTheme.accentPrimary : (isCompleted ? CoffeeTheme.accentSecondary : CoffeeTheme.card))
+            .clipShape(Capsule())
+            .overlay(
+                Capsule()
+                    .stroke(isActive || isCompleted ? Color.clear : CoffeeTheme.border.opacity(0.6), lineWidth: 1)
+            )
         }
-        .foregroundStyle(isActive || isCompleted ? .white : CoffeeTheme.textTertiary)
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 8)
-        .background(isActive ? CoffeeTheme.accentPrimary : (isCompleted ? CoffeeTheme.accentSecondary : CoffeeTheme.card))
-        .clipShape(Capsule())
-        .overlay(
-            Capsule()
-                .stroke(isActive || isCompleted ? Color.clear : CoffeeTheme.border.opacity(0.6), lineWidth: 1)
-        )
+        .buttonStyle(.plain)
     }
 
     // MARK: - Method Selection Stage
@@ -629,10 +643,34 @@ struct BrewFlowView: View {
             }
 
             VStack(spacing: 12) {
-                sensorySliderRow(title: "Acidity", description: "Bright & crisp vs flat", value: $vm.acidity)
-                sensorySliderRow(title: "Sweetness", description: "Caramelized sugars vs raw", value: $vm.sweetness)
-                sensorySliderRow(title: "Bitterness", description: "Clean roast vs over-extracted", value: $vm.bitterness)
-                sensorySliderRow(title: "Body", description: "Silky mouthfeel vs watery", value: $vm.body)
+                sensoryLevelRow(
+                    title: "Acidity",
+                    lowDesc: "Mellow & Soft",
+                    medDesc: "Balanced & Refreshing",
+                    highDesc: "Bright & Crisp",
+                    value: $vm.acidity
+                )
+                sensoryLevelRow(
+                    title: "Sweetness",
+                    lowDesc: "Subtle & Natural",
+                    medDesc: "Honey & Caramel",
+                    highDesc: "Rich & Syrupy",
+                    value: $vm.sweetness
+                )
+                sensoryLevelRow(
+                    title: "Bitterness",
+                    lowDesc: "Clean & Sweet Finish",
+                    medDesc: "Mild Dark Chocolate",
+                    highDesc: "Bold & Intense Roast",
+                    value: $vm.bitterness
+                )
+                sensoryLevelRow(
+                    title: "Body",
+                    lowDesc: "Light & Tea-like",
+                    medDesc: "Smooth & Velvety",
+                    highDesc: "Heavy & Full-bodied",
+                    value: $vm.body
+                )
             }
 
             // SCA Cupping Flavor Palette
@@ -708,25 +746,105 @@ struct BrewFlowView: View {
         }
     }
 
-    private func sensorySliderRow(title: String, description: String, value: Binding<Double>) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack {
+    // MARK: - Sensory Taste Level Model & View
+    private enum SensoryLevel: String, CaseIterable {
+        case low = "Low"
+        case medium = "Medium"
+        case high = "High"
+
+        var value: Double {
+            switch self {
+            case .low: return 1.5
+            case .medium: return 3.0
+            case .high: return 4.5
+            }
+        }
+
+        static func from(value: Double) -> SensoryLevel {
+            if value <= 2.2 { return .low }
+            if value >= 3.8 { return .high }
+            return .medium
+        }
+    }
+
+    private func sensoryLevelRow(
+        title: String,
+        lowDesc: String,
+        medDesc: String,
+        highDesc: String,
+        value: Binding<Double>
+    ) -> some View {
+        let currentLevel = SensoryLevel.from(value: value.wrappedValue)
+        let activeDescription: String = {
+            switch currentLevel {
+            case .low: return lowDesc
+            case .medium: return medDesc
+            case .high: return highDesc
+            }
+        }()
+
+        return VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .firstTextBaseline) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title)
                         .font(.subheadline.weight(.bold))
                         .foregroundStyle(CoffeeTheme.textPrimary)
-                    Text(description)
-                        .font(.caption2)
-                        .foregroundStyle(CoffeeTheme.textTertiary)
+                    Text(activeDescription)
+                        .font(.caption2.weight(.medium))
+                        .foregroundStyle(CoffeeTheme.accentWarmGold)
+                        .animation(.easeInOut(duration: 0.2), value: activeDescription)
                 }
+
                 Spacer()
-                Text("\(value.wrappedValue, specifier: "%.1f")")
-                    .font(.subheadline.weight(.bold))
+
+                // Current selected level badge
+                Text(currentLevel.rawValue.uppercased())
+                    .font(.system(size: 11, weight: .bold))
+                    .tracking(0.8)
                     .foregroundStyle(CoffeeTheme.accentPrimary)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 4)
+                    .background(CoffeeTheme.accentPrimary.opacity(0.14))
+                    .clipShape(Capsule())
             }
 
-            Slider(value: value, in: 1...5, step: 0.5)
-                .tint(CoffeeTheme.accentPrimary)
+            // 3-Option Segmented Selector: [ Low ]  [ Medium ]  [ High ]
+            HStack(spacing: 8) {
+                ForEach(SensoryLevel.allCases, id: \.self) { level in
+                    let isSelected = currentLevel == level
+                    Button {
+                        let generator = UISelectionFeedbackGenerator()
+                        generator.selectionChanged()
+                        withAnimation(.spring(response: 0.25, dampingFraction: 0.75)) {
+                            value.wrappedValue = level.value
+                        }
+                    } label: {
+                        Text(level.rawValue)
+                            .font(.subheadline.weight(isSelected ? .bold : .medium))
+                            .foregroundStyle(isSelected ? .white : CoffeeTheme.textSecondary)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 10)
+                            .background(
+                                isSelected ?
+                                AnyShapeStyle(
+                                    LinearGradient(
+                                        colors: [CoffeeTheme.accentPrimary, Color(red: 0.72, green: 0.34, blue: 0.16)],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    )
+                                ) :
+                                AnyShapeStyle(CoffeeTheme.cardAlt)
+                            )
+                            .clipShape(RoundedRectangle(cornerRadius: 11, style: .continuous))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 11, style: .continuous)
+                                    .stroke(isSelected ? Color.white.opacity(0.2) : CoffeeTheme.borderSubtle, lineWidth: 1)
+                            )
+                            .shadow(color: isSelected ? CoffeeTheme.accentPrimary.opacity(0.35) : .clear, radius: 4, y: 2)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
         }
         .padding(14)
         .coffeeCard()

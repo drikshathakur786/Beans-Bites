@@ -169,7 +169,7 @@ struct ProfileScreenView: View {
                     postPendingDelete = nil
                 }
             } message: { post in
-                Text(""\(post.ritual.title)" will be permanently removed from your profile and the community feed.")
+                Text("\"\(post.ritual.title)\" will be permanently removed from your profile and the community feed.")
             }
         }
     }

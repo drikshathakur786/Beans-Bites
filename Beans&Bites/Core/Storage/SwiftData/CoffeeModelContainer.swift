@@ -10,7 +10,8 @@ import SwiftData
 final class CoffeeModelContainer {
     static let shared: ModelContainer = {
         let schema = Schema([
-            BrewSessionEntity.self
+            BrewSessionEntity.self,
+            CoffeeBeanEntity.self
         ])
         let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
         do {

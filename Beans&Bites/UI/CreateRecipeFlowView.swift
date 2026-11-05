@@ -1126,6 +1126,9 @@ struct CreateRecipeFlowView: View {
     }
 
     private func saveAsDraft() {
+        if let existing = existingDraft {
+            removeDraft(id: existing.id, title: "")
+        }
         saveStructuredDraft(buildStructuredRecipe())
         store.updateCommunityDraft(buildCommunityDraft(includeContest: false))
         store.setSelectedTab(.brew)
@@ -1224,7 +1227,9 @@ struct CreateRecipeFlowView: View {
             return
         }
 
-        saveStructuredDraft(buildStructuredRecipe())
+        // Clean up from drafts now that it is being published
+        removeDraft(id: existingDraft?.id, title: draft.recipeName)
+
         store.updateCommunityDraft(buildCommunityDraft(includeContest: false))
 
         let posted = store.submitDraftPost(author: store.profile.user)
@@ -1333,6 +1338,38 @@ struct CreateRecipeFlowView: View {
         }
 
         drafts.insert(recipe, at: 0)
+        guard let data = try? encoder.encode(drafts) else { return }
+        try? data.write(to: url, options: .atomic)
+    }
+
+    private func removeDraft(id: UUID?, title: String) {
+        let fm = FileManager.default
+        guard let doc = fm.urls(for: .documentDirectory, in: .userDomainMask).first else { return }
+        let url = doc.appendingPathComponent("structured_recipe_drafts").appendingPathExtension("json")
+
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted]
+        encoder.dateEncodingStrategy = .iso8601
+
+        var drafts: [StructuredRecipeGuide] = []
+        if let data = try? Data(contentsOf: url),
+           let saved = try? decoder.decode([StructuredRecipeGuide].self, from: data) {
+            drafts = saved
+        }
+
+        let trimmedTitle = title.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        drafts.removeAll { item in
+            if let id = id, item.id == id {
+                return true
+            }
+            if !trimmedTitle.isEmpty && item.metadata.title.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() == trimmedTitle {
+                return true
+            }
+            return false
+        }
+
         guard let data = try? encoder.encode(drafts) else { return }
         try? data.write(to: url, options: .atomic)
     }
