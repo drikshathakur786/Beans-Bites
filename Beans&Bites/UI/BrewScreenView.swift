@@ -13,6 +13,7 @@ struct BrewScreenView: View {
     @State private var selectedFilter: BrewFilter = .all
     @State private var selectedRitualForBrew: BrewRitual?
     @State private var showCreateRecipe = false
+    @State private var showBaristaSheet = false
 
     private var allOfficialRituals: [BrewRitual] {
         uniqueRituals(store.curatedRituals + store.trendingRituals + [store.featuredRitual])
@@ -71,24 +72,38 @@ struct BrewScreenView: View {
 
     var body: some View {
         NavigationStack {
-            ScrollView(showsIndicators: false) {
-                VStack(alignment: .leading, spacing: 20) {
-                    // Filter Chips Bar
-                    filterCapsulesBar
+            ZStack(alignment: .bottomTrailing) {
+                ScrollView(showsIndicators: false) {
+                    VStack(alignment: .leading, spacing: 18) {
+                        // Filter Chips Bar
+                        filterCapsulesBar
 
-                    // Featured Food Pairing Card (when in pairings mode or general view)
-                    if let pairing = weeklyPairing, query.isEmpty, (selectedFilter == .pairings || selectedFilter == .all) {
-                        featuredPairingCard(pairing)
+                        // AI Recommendation Quick Bar
+                        if query.isEmpty {
+                            aiBaristaQuickBar
+                        }
+
+                        // Featured Food Pairing Card (when in pairings mode or general view)
+                        if let pairing = weeklyPairing, query.isEmpty, (selectedFilter == .pairings || selectedFilter == .all) {
+                            featuredPairingCard(pairing)
+                        }
+
+                        // Recipe Catalog Grid
+                        recipesCatalogSection
                     }
-
-                    // Recipe Catalog Grid
-                    recipesCatalogSection
+                    .padding(.horizontal, 20)
+                    .padding(.top, 8)
+                    .padding(.bottom, 88)
                 }
-                .padding(.horizontal, 20)
-                .padding(.top, 8)
-                .padding(.bottom, 64)
+                .background(CoffeeTheme.bgPrimary.ignoresSafeArea())
+
+                // Floating AI Barista Assistant Button (Corner Placement)
+                SmartBaristaFloatingButton {
+                    showBaristaSheet = true
+                }
+                .padding(.trailing, 20)
+                .padding(.bottom, 16)
             }
-            .background(CoffeeTheme.bgPrimary.ignoresSafeArea())
             .navigationTitle("Brew")
             .navigationBarTitleDisplayMode(.large)
             .searchable(
@@ -115,10 +130,66 @@ struct BrewScreenView: View {
                     .presentationDetents([.large])
                     .presentationCornerRadius(32)
             }
+            .sheet(isPresented: $showBaristaSheet) {
+                SmartBaristaSheetView { ritual in
+                    showBaristaSheet = false
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                        selectedRitualForBrew = ritual
+                    }
+                }
+                .presentationDetents([.medium, .large])
+                .presentationCornerRadius(32)
+            }
             .sheet(item: $selectedRitualForBrew) { ritual in
                 BrewFlowView(ritual: ritual)
             }
         }
+    }
+
+    // MARK: - AI Barista Quick Bar
+    private var aiBaristaQuickBar: some View {
+        Button {
+            let generator = UIImpactFeedbackGenerator(style: .medium)
+            generator.impactOccurred()
+            showBaristaSheet = true
+        } label: {
+            HStack(spacing: 8) {
+                HStack(spacing: 4) {
+                    Image(systemName: "sparkles")
+                        .font(.system(size: 10, weight: .bold))
+                    Text("AI")
+                        .font(.system(size: 10, weight: .heavy))
+                }
+                .foregroundStyle(CoffeeTheme.accentWarmGold)
+                .padding(.horizontal, 7)
+                .padding(.vertical, 3.5)
+                .background(CoffeeTheme.accentWarmGold.opacity(0.14))
+                .clipShape(Capsule())
+
+                Text("Need an extraction tailored?")
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(CoffeeTheme.textPrimary)
+
+                Spacer()
+
+                Text("Ask Barista")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(CoffeeTheme.accentPrimary)
+
+                Image(systemName: "chevron.right")
+                    .font(.caption2.weight(.bold))
+                    .foregroundStyle(CoffeeTheme.accentPrimary)
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 11)
+            .background(CoffeeTheme.card)
+            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .stroke(CoffeeTheme.accentWarmGold.opacity(0.28), lineWidth: 0.9)
+            )
+        }
+        .buttonStyle(.bounce)
     }
 
     // MARK: - Filter Capsules Bar

@@ -37,28 +37,37 @@ struct HomeScreenView: View {
 
     var body: some View {
         NavigationStack {
-            ScrollView(showsIndicators: false) {
-                VStack(alignment: .leading, spacing: 24) {
-                    // Editorial Date & Greeting Subheader
-                    subHeaderGreeting
+            ZStack(alignment: .bottomTrailing) {
+                ScrollView(showsIndicators: false) {
+                    VStack(alignment: .leading, spacing: 24) {
+                        // Editorial Date & Greeting Subheader
+                        subHeaderGreeting
 
-                    // Hero Featured Ritual Card
-                    heroFeaturedRitualCard
+                        // Hero Featured Ritual Card
+                        heroFeaturedRitualCard
 
-                    // Quick Methods Inset Section
-                    methodsSection
+                        // Quick Methods Inset Section
+                        methodsSection
 
-                    // Smart Barista Assistant Callout
-                    baristaAssistantCallout
+                        // Smart Barista Assistant Callout
+                        baristaAssistantCallout
 
-                    // Recent Extraction Sessions
-                    recentSessionsSection
+                        // Recent Extraction Sessions
+                        recentSessionsSection
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.top, 4)
+                    .padding(.bottom, 88)
                 }
-                .padding(.horizontal, 20)
-                .padding(.top, 4)
-                .padding(.bottom, 64)
+                .background(CoffeeTheme.bgPrimary.ignoresSafeArea())
+
+                // Floating AI Barista Assistant Button (Corner Placement)
+                SmartBaristaFloatingButton {
+                    showBaristaSheet = true
+                }
+                .padding(.trailing, 20)
+                .padding(.bottom, 16)
             }
-            .background(CoffeeTheme.bgPrimary.ignoresSafeArea())
             .navigationTitle(dayGreeting)
             .navigationBarTitleDisplayMode(.large)
 
@@ -314,46 +323,91 @@ struct HomeScreenView: View {
     // MARK: - Barista Assistant Callout
     private var baristaAssistantCallout: some View {
         Button {
-            let generator = UIImpactFeedbackGenerator(style: .light)
+            let generator = UIImpactFeedbackGenerator(style: .medium)
             generator.impactOccurred()
             showBaristaSheet = true
         } label: {
-            HStack(spacing: 14) {
-                ZStack {
-                    Circle()
-                        .fill(
-                            LinearGradient(
-                                colors: [CoffeeTheme.accentWarmGold.opacity(0.3), CoffeeTheme.accentPrimary.opacity(0.15)],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-                        .frame(width: 46, height: 46)
+            VStack(alignment: .leading, spacing: 14) {
+                // Top Badge Header
+                HStack {
+                    HStack(spacing: 6) {
+                        Image(systemName: "sparkles")
+                            .font(.system(size: 11, weight: .bold))
+                        Text("AI SMART BARISTA")
+                            .font(.system(size: 11, weight: .bold))
+                            .tracking(1.2)
+                    }
+                    .foregroundStyle(CoffeeTheme.accentWarmGold)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 5)
+                    .background(CoffeeTheme.accentWarmGold.opacity(0.14))
+                    .clipShape(Capsule())
 
-                    Image(systemName: "wand.and.stars")
+                    Spacer()
+
+                    Image(systemName: "arrow.up.right.circle.fill")
                         .font(.system(size: 20, weight: .semibold))
                         .foregroundStyle(CoffeeTheme.accentPrimary)
                 }
 
-                VStack(alignment: .leading, spacing: 3) {
-                    Text("Smart Barista Assistant")
-                        .font(.subheadline.weight(.bold))
+                // Headline & Subtitle
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Tailor Today's Brew")
+                        .font(.title3.weight(.bold))
                         .foregroundStyle(CoffeeTheme.textPrimary)
 
-                    Text("Tailor a recipe to your mood and roast cravings")
-                        .font(.caption)
+                    Text("Tell me your mood, roast depth & desired intensity — get an instant precision extraction ritual.")
+                        .font(.subheadline)
                         .foregroundStyle(CoffeeTheme.textSecondary)
-                        .lineLimit(1)
+                        .lineLimit(2)
                 }
 
-                Spacer()
-
-                Image(systemName: "chevron.right")
-                    .font(.caption.weight(.bold))
-                    .foregroundStyle(CoffeeTheme.textTertiary)
+                // Interactive CTA Bar
+                HStack(spacing: 8) {
+                    Image(systemName: "wand.and.stars")
+                        .font(.subheadline.weight(.semibold))
+                    Text("Ask Smart Barista")
+                        .font(.subheadline.weight(.bold))
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(.caption.weight(.bold))
+                }
+                .foregroundStyle(.white)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 11)
+                .background(
+                    LinearGradient(
+                        colors: [
+                            CoffeeTheme.accentPrimary,
+                            Color(red: 0.72, green: 0.34, blue: 0.16)
+                        ],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                )
+                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
             }
-            .padding(16)
-            .coffeeCard(cornerRadius: 20)
+            .padding(18)
+            .background(
+                RoundedRectangle(cornerRadius: 22, style: .continuous)
+                    .fill(CoffeeTheme.card)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 22, style: .continuous)
+                            .stroke(
+                                LinearGradient(
+                                    colors: [
+                                        CoffeeTheme.accentWarmGold.opacity(0.4),
+                                        CoffeeTheme.borderSubtle,
+                                        CoffeeTheme.borderSubtle.opacity(0.3)
+                                    ],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                ),
+                                lineWidth: 1.2
+                            )
+                    )
+            )
+            .shadow(color: CoffeeTheme.accentPrimary.opacity(0.12), radius: 10, y: 5)
         }
         .buttonStyle(.bounce)
     }
@@ -451,7 +505,7 @@ struct HomeScreenView: View {
 }
 
 // MARK: - Smart Barista Sheet
-private struct SmartBaristaSheetView: View {
+struct SmartBaristaSheetView: View {
     @Environment(\.dismiss) private var dismiss
     @ObservedObject private var store = AppDataStore.shared
 
